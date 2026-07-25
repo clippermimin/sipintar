@@ -253,5 +253,5 @@
     });
   }
   
-  window.Router.register('/guru/piket-laporan', render);
+  window.Router.register('/guru/piket/laporan', render);
 })();
