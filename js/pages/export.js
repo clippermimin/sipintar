@@ -3,6 +3,7 @@
     let backPath = '/login';
     if (window.APP_STATE.role === 'admin') backPath = '/admin/dashboard';
     else if (window.APP_STATE.role === 'kepsek') backPath = '/kepsek/dashboard';
+    else if (window.APP_STATE.role === 'guru') backPath = '/guru/piket';
 
     const headerHtml = window.Components.header({ 
       title: 'Ekspor Laporan', 

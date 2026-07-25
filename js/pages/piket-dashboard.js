@@ -29,10 +29,16 @@
             </div>
           </div>
 
-          <button id="btnBuatLaporan" class="btn btn-primary btn-full btn-lg" style="margin-bottom: 2rem;">
-            <span class="material-icons-outlined" style="margin-right: 0.5rem;">edit_document</span>
-            Buat Laporan Baru
-          </button>
+          <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 2rem;">
+            <button id="btnBuatLaporan" class="btn btn-primary btn-full btn-lg">
+              <span class="material-icons-outlined" style="margin-right: 0.5rem;">edit_document</span>
+              Buat Laporan Baru
+            </button>
+            <button id="btnUnduhLaporan" class="btn btn-outline btn-full btn-lg" style="border-style: dashed; color: var(--primary);">
+              <span class="material-icons-outlined" style="margin-right: 0.5rem;">download</span>
+              Unduh Rekap Laporan
+            </button>
+          </div>
 
           <div class="section-title" style="margin-bottom: 1rem; font-weight: bold;">Riwayat Laporan</div>
           <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 2rem;">
@@ -78,6 +84,12 @@
     if (btnBuat) {
       btnBuat.addEventListener('click', () => {
         window.Router.navigate('/guru/piket/laporan');
+      });
+    }
+    const btnUnduh = document.getElementById('btnUnduhLaporan');
+    if (btnUnduh) {
+      btnUnduh.addEventListener('click', () => {
+        window.Router.navigate('/export');
       });
     }
   }
