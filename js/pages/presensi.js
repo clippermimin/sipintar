@@ -211,7 +211,7 @@
           btnSubmit.disabled = true;
           
           const data = {
-            guru_id: window.APP_STATE?.currentGuru?.id,
+            guru_id: window.APP_STATE?.currentGuru?.id || 'd-guru-1',
             jenis: document.getElementById('jenis-izin').value,
             tgl_mulai: document.getElementById('tgl-mulai').value,
             tgl_selesai: document.getElementById('tgl-selesai').value,

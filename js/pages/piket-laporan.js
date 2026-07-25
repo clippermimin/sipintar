@@ -229,16 +229,16 @@
         }
       });
       
-      const data = {
-        sesi: document.querySelector('input[name="sesi"]:checked').value,
-        catatan: document.getElementById('catatan').value,
-        foto_url: null, // Dummy since no real upload
-        guru_id: window.APP_STATE.currentGuru.id,
-        absensi: absensi,
-        status: 'Selesai'
-      };
-      
       try {
+        const data = {
+          sesi: document.querySelector('input[name="sesi"]:checked').value,
+          catatan: document.getElementById('catatan').value,
+          foto_url: null, // Dummy since no real upload
+          guru_id: window.APP_STATE?.currentGuru?.id || 'd-guru-1',
+          absensi: absensi,
+          status: 'Selesai'
+        };
+        
         await window.APP_DATA.submitLaporanPiket(data);
         window.Components.toast('Laporan berhasil disimpan!');
         
