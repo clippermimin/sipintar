@@ -1,0 +1,233 @@
+/* Login Page */
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #f8f9fa, #e8f0fe);
+}
+
+.login-container {
+  width: 100%;
+  max-width: 400px;
+  padding: 32px 24px;
+}
+
+.login-logo {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.login-logo h1 {
+  font-family: 'Poppins', sans-serif;
+  font-size: 28px;
+  color: var(--primary);
+  margin-bottom: 8px;
+}
+
+.login-logo p {
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin: 0;
+}
+
+.login-card {
+  background-color: white;
+  border-radius: var(--radius-xl);
+  padding: 32px 24px;
+  box-shadow: var(--shadow-lg);
+}
+
+.demo-roles {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 32px;
+}
+
+.demo-role-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 20px 12px;
+  border-radius: var(--radius-lg);
+  border: 2px solid var(--border);
+  cursor: pointer;
+  transition: all var(--transition-slow);
+  text-align: center;
+}
+
+.demo-role-card:hover {
+  border-color: var(--primary);
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+  background-color: var(--primary-light);
+}
+
+.demo-role-card .role-emoji {
+  font-size: 32px;
+}
+
+.demo-role-card .role-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.login-divider {
+  text-align: center;
+  position: relative;
+  margin: 24px 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.login-divider::before,
+.login-divider::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: calc(50% - 80px);
+  height: 1px;
+  background-color: var(--border);
+}
+
+.login-divider::before {
+  left: 0;
+}
+
+.login-divider::after {
+  right: 0;
+}
+
+/* Dashboard Page */
+.guru-dashboard .greeting-section {
+  padding: 24px 16px;
+  padding-bottom: 8px;
+}
+
+.guru-dashboard .greeting-name {
+  font-size: 24px;
+  font-weight: 700;
+  font-family: 'Poppins', sans-serif;
+  margin-bottom: 4px;
+}
+
+.guru-dashboard .greeting-subtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+.guru-dashboard .status-card {
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: white;
+  border-radius: var(--radius-xl);
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.guru-dashboard .status-card::after {
+  content: '';
+  position: absolute;
+  right: -20px;
+  bottom: -20px;
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  background-color: rgba(255,255,255,0.1);
+}
+
+.guru-dashboard .presensi-btn-card {
+  background-color: white;
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  border: 2px dashed var(--border);
+}
+
+.guru-dashboard .presensi-btn-card:hover {
+  border-color: var(--primary);
+  background-color: var(--primary-light);
+}
+
+.guru-dashboard .piket-card {
+  background-color: white;
+  border-left: 4px solid var(--warning);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+}
+
+/* Presensi Page */
+.presensi-page .camera-frame {
+  width: 100%;
+  aspect-ratio: 3/4;
+  background-color: #1a1a1a;
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.presensi-page .camera-frame-inner {
+  border: 3px dashed rgba(255,255,255,0.3);
+  border-radius: var(--radius-xl);
+  width: 70%;
+  height: 60%;
+  position: absolute;
+}
+
+.presensi-page .face-placeholder {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background-color: rgba(255,255,255,0.1);
+  border: 3px solid rgba(255,255,255,0.3);
+}
+
+.presensi-page .location-verify {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background-color: var(--success-light);
+  border-radius: var(--radius-md);
+}
+
+/* Piket Dashboard */
+.piket-dashboard .piket-status-banner {
+  background: linear-gradient(135deg, var(--warning), #F9A825);
+  color: white;
+  border-radius: var(--radius-xl);
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* Kepsek Dashboard */
+.kepsek-dashboard .kepsek-greeting {
+  background: linear-gradient(135deg, #1A73E8, #0D47A1);
+  color: white;
+  border-radius: 0 0 var(--radius-xl) var(--radius-xl);
+  padding: 24px;
+}
+
+/* Admin Page */
+@media (min-width: 1024px) {
+  .admin-page .page {
+    max-width: 1200px;
+  }
+}
