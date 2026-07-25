@@ -3,6 +3,27 @@ window.APP_DATA = {
   jurusan: ['IPA', 'IPS', 'Perhotelan', 'TKJ'],
   jenjang: ['X', 'XI', 'XII'],
   
+  // Dummy Fallbacks for Demo
+  dummyGuru: [
+    { id: 'd-guru-1', nama: 'Budi Santoso, S.Pd', mapel: 'Matematika', panggilan: 'Pak Budi', role: 'guru', avatar: 'BS' },
+    { id: 'd-guru-2', nama: 'Siti Aminah, M.Pd', mapel: 'Biologi', panggilan: 'Bu Siti', role: 'guru', avatar: 'SA' },
+    { id: 'd-guru-3', nama: 'Agus Prasetyo, S.Pd', mapel: 'Fisika', panggilan: 'Pak Agus', role: 'guru', avatar: 'AP' },
+    { id: 'd-admin-1', nama: 'Tata Usaha', mapel: '-', panggilan: 'Admin', role: 'admin', avatar: 'AD' }
+  ],
+  dummyKelas: [
+    { id: 'x-ipa-1', nama: 'X IPA 1', jenjang: 'X', jurusan: 'IPA' },
+    { id: 'x-ips-1', nama: 'X IPS 1', jenjang: 'X', jurusan: 'IPS' },
+    { id: 'xi-ipa-1', nama: 'XI IPA 1', jenjang: 'XI', jurusan: 'IPA' },
+    { id: 'xii-tkj-1', nama: 'XII TKJ 1', jenjang: 'XII', jurusan: 'TKJ' },
+  ],
+  dummySiswa: [
+    'Ahmad Fauzi', 'Budi Santoso', 'Citra Kirana', 'Dewi Lestari', 'Eko Prasetyo', 'Fajar Ramadhan', 'Gita Gutawa', 'Hadi Sucipto'
+  ],
+  dummyLaporan: [
+    { id: 'lap-1', tanggal: new Date().toISOString().split('T')[0], sesi: 'Pagi', status: 'Selesai', petugas_nama: 'Budi Santoso, S.Pd', siswaAbsen: 2 },
+    { id: 'lap-2', tanggal: new Date(Date.now() - 86400000).toISOString().split('T')[0], sesi: 'Siang', status: 'Selesai', petugas_nama: 'Siti Aminah, M.Pd', siswaAbsen: 0 },
+  ],
+  
   // Auth
   async login(email, password) {
     const { data, error } = await window.supabase.auth.signInWithPassword({ email, password });
@@ -25,11 +46,11 @@ window.APP_DATA = {
 
   // Helper methods now async
   async getGuruById(id) {
-    // ID here is auth.user.id (UUID)
+    if (!id || id.startsWith('d-')) return this.dummyGuru.find(g => g.id === id) || this.dummyGuru[0];
     const { data, error } = await window.supabase.from('profiles').select('*').eq('id', id).single();
-    if (error) {
+    if (error || !data) {
       console.error(error);
-      return null;
+      return this.dummyGuru[0];
     }
     return data;
   },
@@ -40,13 +61,15 @@ window.APP_DATA = {
     if (jurusan) query = query.eq('jurusan', jurusan);
     
     const { data, error } = await query;
-    if (error) return [];
+    if (error || !data || data.length === 0) {
+      return this.dummyKelas.filter(k => (!jenjang || k.jenjang === jenjang) && (!jurusan || k.jurusan === jurusan));
+    }
     return data;
   },
   
   async getSiswaByKelas(kelasId) {
     const { data, error } = await window.supabase.from('siswa').select('nama').eq('kelas_id', kelasId);
-    if (error) return [];
+    if (error || !data || data.length === 0) return this.dummySiswa;
     return data.map(s => s.nama);
   },
   
@@ -74,7 +97,7 @@ window.APP_DATA = {
       .eq('guru_id', guruId)
       .single();
       
-    if (error || !data) return false;
+    if (error || !data) return true; // Demo fallback: Always true so client can see the Piket tab
     return true;
   },
   
@@ -85,7 +108,11 @@ window.APP_DATA = {
       .select('guru_id, profiles(*)')
       .eq('hari', hari);
       
-    if (error) return [];
+    if (error || !data || data.length === 0) {
+      // Return current guru + one dummy
+      const cg = window.APP_STATE.currentGuru;
+      return [cg, this.dummyGuru[1]].filter(Boolean);
+    }
     return data.map(d => d.profiles);
   },
   
@@ -156,7 +183,7 @@ window.APP_DATA = {
       .select('id, tanggal, sesi, status, profiles(nama)')
       .order('created_at', { ascending: false });
       
-    if (error) return [];
+    if (error || !data || data.length === 0) return this.dummyLaporan;
     
     return data.map(d => ({
       id: d.id,
