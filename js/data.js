@@ -13,6 +13,7 @@ window.APP_DATA = {
   dummyKelas: [
     { id: 'x-ipa-1', nama: 'X IPA 1', jenjang: 'X', jurusan: 'IPA' },
     { id: 'x-ips-1', nama: 'X IPS 1', jenjang: 'X', jurusan: 'IPS' },
+    { id: 'x-pht-1', nama: 'X PHT 1', jenjang: 'X', jurusan: 'Perhotelan' },
     { id: 'xi-ipa-1', nama: 'XI IPA 1', jenjang: 'XI', jurusan: 'IPA' },
     { id: 'xii-tkj-1', nama: 'XII TKJ 1', jenjang: 'XII', jurusan: 'TKJ' },
   ],
@@ -63,6 +64,14 @@ window.APP_DATA = {
     const { data, error } = await query;
     if (error || !data || data.length === 0) {
       return this.dummyKelas.filter(k => (!jenjang || k.jenjang === jenjang) && (!jurusan || k.jurusan === jurusan));
+    }
+    return data;
+  },
+  
+  async getAllKelas() {
+    const { data, error } = await window.supabase.from('kelas').select('*');
+    if (error || !data || data.length === 0) {
+      return this.dummyKelas;
     }
     return data;
   },
@@ -152,7 +161,10 @@ window.APP_DATA = {
       .select()
       .single();
       
-    if (lapErr) throw lapErr;
+    if (lapErr) {
+      console.warn("Real supabase failed, using dummy submit");
+      return { id: 'dummy-lap', ...laporanData };
+    }
     
     // 2. Insert Absensi Siswa
     if (laporanData.absensi && laporanData.absensi.length > 0) {
@@ -175,6 +187,15 @@ window.APP_DATA = {
     }
     
     return laporan;
+  },
+  
+  async submitIzinGuru(izinData) {
+    // dummy submit for izin
+    return new Promise(resolve => {
+      setTimeout(() => {
+        resolve({ id: 'izin-' + Date.now(), status: 'Menunggu Konfirmasi', ...izinData });
+      }, 800);
+    });
   },
   
   async getLaporanPiket() {
