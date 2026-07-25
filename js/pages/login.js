@@ -24,6 +24,24 @@
             </form>
           </div>
           
+          <div class="login-demo-roles">
+            <p class="demo-title">Login Cepat (Demo):</p>
+            <div class="demo-roles-grid">
+              <div class="demo-role-card" id="role-guru">
+                <span class="role-emoji">👨‍🏫</span>
+                <span class="role-name">Guru/Piket</span>
+              </div>
+              <div class="demo-role-card" id="role-admin">
+                <span class="role-emoji">👨‍💼</span>
+                <span class="role-name">Admin</span>
+              </div>
+              <div class="demo-role-card" id="role-kepsek">
+                <span class="role-emoji">👔</span>
+                <span class="role-name">Kepsek</span>
+              </div>
+            </div>
+          </div>
+          
           ${Components.footer()}
         </div>
       </div>
@@ -65,6 +83,16 @@
   
   function bindEvents() {
     document.getElementById('login-form').addEventListener('submit', handleLogin);
+    
+    const setLogin = (email) => {
+      document.querySelector('#login-form input[type="email"]').value = email;
+      document.querySelector('#login-form input[type="password"]').value = 'password123';
+      document.getElementById('login-form').dispatchEvent(new Event('submit', { cancelable: true }));
+    };
+    
+    document.getElementById('role-guru').addEventListener('click', () => setLogin('budi@sipinter.id'));
+    document.getElementById('role-admin').addEventListener('click', () => setLogin('admin@sipinter.id'));
+    document.getElementById('role-kepsek').addEventListener('click', () => setLogin('kepsek@sipinter.id'));
   }
   
   Router.register('/login', render);
