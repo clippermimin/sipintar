@@ -1,8 +1,9 @@
 (function() {
   let currentStep = 0;
   
-  function render() {
+  async function render() {
     let content = '';
+    const hariTanggal = window.APP_DATA.getHariTanggal ? await window.APP_DATA.getHariTanggal() : 'Sabtu, 25 Juli 2026';
 
     if (currentStep === 0) {
       content = `
@@ -53,7 +54,7 @@
           </div>
           
           <div class="card" style="margin-bottom: 2rem; padding: 1rem;">
-            <div style="margin-bottom: 0.5rem;"><strong>Tanggal:</strong> ${window.APP_DATA.getHariTanggal ? window.APP_DATA.getHariTanggal() : '-'}</div>
+            <div style="margin-bottom: 0.5rem;"><strong>Tanggal:</strong> ${hariTanggal}</div>
             <div style="margin-bottom: 0.5rem;"><strong>Waktu:</strong> 06:45 WIB</div>
             <div><strong>Status:</strong> Masuk</div>
           </div>
@@ -62,7 +63,6 @@
         </div>
       `;
     } else if (currentStep === 3) {
-      const tgl = window.APP_DATA.getHariTanggal ? window.APP_DATA.getHariTanggal() : 'Sabtu, 25 Juli 2026';
       content = `
         <div class="page-content success-screen" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 80vh; text-align: center;">
           <span class="material-icons-outlined success-icon" style="color: #34a853; font-size: 6rem; margin-bottom: 1rem; animation: scaleIn 0.5s ease-out;">check_circle</span>
@@ -77,7 +77,7 @@
           <p class="success-subtitle" style="color: var(--text-secondary, #666); margin-bottom: 1.5rem;">Presensi masuk Anda telah tercatat</p>
           <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; width: 100%; max-width: 300px; margin-bottom: 2rem;">
             <strong>06:45 WIB</strong><br/>
-            <span style="font-size: 0.9rem; color: var(--text-secondary, #666);">${tgl}</span>
+            <span style="font-size: 0.9rem; color: var(--text-secondary, #666);">${hariTanggal}</span>
           </div>
           <button id="btnKembaliDashboard" class="btn btn-primary btn-full btn-lg" style="max-width: 300px;">Kembali ke Dashboard</button>
         </div>

@@ -58,13 +58,14 @@
     `;
   }
   
-  function render() {
+  async function render() {
     const days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
     const colors = ['#e3f2fd', '#e8f5e9', '#fff3e0', '#f3e5f5', '#ffebee', '#e0f7fa'];
     
-    const jadwalHtml = days.map((day, index) => {
+    const jadwalHtmlArr = await Promise.all(days.map(async (day, index) => {
       const guruIds = window.APP_DATA.jadwalPiket[day] || [];
-      const gurus = guruIds.map(id => window.APP_DATA.getGuruById(id)).filter(Boolean);
+      const gurusUnfiltered = await Promise.all(guruIds.map(async id => await window.APP_DATA.getGuruById(id)));
+      const gurus = gurusUnfiltered.filter(Boolean);
       
       const guruListHtml = gurus.map(g => `
         <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; background: white; border-radius: 8px; margin-bottom: 8px; border: 1px solid #eee;">
@@ -89,7 +90,8 @@
           </button>
         </div>
       `;
-    }).join('');
+    }));
+    const jadwalHtml = jadwalHtmlArr.join('');
 
     const content = `
       <div style="margin-bottom: 24px;">

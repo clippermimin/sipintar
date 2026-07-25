@@ -58,7 +58,7 @@
     `;
   }
   
-  function render() {
+  async function render() {
     const filterChips = `
       <div class="chip-group" style="display: flex; gap: 8px; margin-bottom: 24px;">
         <div class="chip active" style="padding: 6px 16px; border-radius: 16px; background: #1a73e8; color: white; font-size: 14px; cursor: pointer;">Semua</div>
@@ -69,8 +69,8 @@
     `;
 
     const laporans = window.APP_DATA.laporanPiket || [];
-    const listHtml = laporans.map(l => {
-      const guru = window.APP_DATA.getGuruById(l.petugas);
+    const listHtmlArr = await Promise.all(laporans.map(async l => {
+      const guru = await window.APP_DATA.getGuruById(l.petugas);
       const badgeHtml = l.status === 'Selesai' 
         ? `<span class="badge" style="background: #e8f5e9; color: #2e7d32; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 500;">Selesai</span>`
         : `<span class="badge" style="background: #fff3e0; color: #ef6c00; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 500;">Belum Selesai</span>`;
@@ -97,7 +97,8 @@
           </div>
         </div>
       `;
-    }).join('');
+    }));
+    const listHtml = listHtmlArr.join('');
 
     const content = `
       <div style="margin-bottom: 24px;">

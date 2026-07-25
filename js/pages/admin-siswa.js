@@ -58,7 +58,7 @@
     `;
   }
   
-  function render() {
+  async function render() {
     // Generate some student lists by class
     const filterHtml = `
       <div class="chip-group" style="display: flex; gap: 8px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 8px;">
@@ -71,8 +71,8 @@
 
     const kelasList = window.APP_DATA.kelas.slice(0, 3); // Just show 3 for demo
     
-    let contentHtml = kelasList.map(k => {
-      const siswaList = window.APP_DATA.getSiswaByKelas(k.id) || [];
+    let contentHtmlArr = await Promise.all(kelasList.map(async k => {
+      const siswaList = (await window.APP_DATA.getSiswaByKelas(k.id)) || [];
       const siswaItems = siswaList.map((s, i) => `
         <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #eee;">
           <div style="display: flex; align-items: center; gap: 12px;">
@@ -94,7 +94,8 @@
           <div>${siswaItems}</div>
         </div>
       `;
-    }).join('');
+    }));
+    let contentHtml = contentHtmlArr.join('');
 
     const content = `
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">

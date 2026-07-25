@@ -76,7 +76,7 @@
     `;
   }
   
-  function render() {
+  async function render() {
     const statGrid = `
       <div class="stat-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 24px;">
         <div class="stat-card" style="background: white; padding: 16px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 16px;">
@@ -157,7 +157,7 @@
     const content = `
       <div style="margin-bottom: 24px;">
         <h1 style="margin: 0 0 8px 0; font-size: 24px; color: #333;">Selamat Datang, Admin</h1>
-        <p style="margin: 0; color: #666;">${window.APP_DATA.getHariTanggal()}</p>
+        <p style="margin: 0; color: #666;">${await window.APP_DATA.getHariTanggal()}</p>
       </div>
 
       ${statGrid}

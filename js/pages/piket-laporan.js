@@ -12,9 +12,9 @@
     catatan: ''
   };
 
-  function getStepHtml() {
+  async function getStepHtml() {
     if (currentStep === 0) {
-      const today = window.APP_DATA.getHariTanggal ? window.APP_DATA.getHariTanggal() : '';
+      const today = window.APP_DATA.getHariTanggal ? await window.APP_DATA.getHariTanggal() : '';
       return `
         <div style="margin-bottom: 2rem;">
           ${window.Components.stepIndicator ? window.Components.stepIndicator(5, 0) : ''}
@@ -40,7 +40,7 @@
       const jurusanList = window.APP_DATA.jurusan || ['IPA', 'IPS', 'Perhotelan', 'TKJ'];
       let kelasiList = [];
       if (state.jenjang && state.jurusan) {
-        kelasiList = window.APP_DATA.getKelasByFilter ? window.APP_DATA.getKelasByFilter(state.jenjang, state.jurusan) : [];
+        kelasiList = window.APP_DATA.getKelasByFilter ? await window.APP_DATA.getKelasByFilter(state.jenjang, state.jurusan) : [];
       }
 
       return `
@@ -73,7 +73,7 @@
     }
 
     else if (currentStep === 2) {
-      const siswaList = state.kelasId && window.APP_DATA.getSiswaByKelas ? window.APP_DATA.getSiswaByKelas(state.kelasId) : [];
+      const siswaList = state.kelasId && window.APP_DATA.getSiswaByKelas ? await window.APP_DATA.getSiswaByKelas(state.kelasId) : [];
       const selCount = state.selectedSiswa.length;
       
       return `
@@ -191,12 +191,12 @@
     return '';
   }
 
-  function render() {
+  async function render() {
     const html = `
       <div class="page piket-laporan-page">
         ${currentStep < 5 ? window.Components.header({ title: 'Laporan Piket Baru', subtitle: 'SIPINTER', back: true, backPath: currentStep === 0 ? '/guru/piket' : undefined, onBack: currentStep > 0 ? () => { currentStep--; render(); } : undefined }) : ''}
         <div class="page-content" style="${currentStep === 5 ? 'padding: 0;' : ''}">
-          ${getStepHtml()}
+          ${await getStepHtml()}
         </div>
       </div>
     `;
@@ -364,16 +364,30 @@
         });
       }
 
-      document.getElementById('btnSimpan')?.addEventListener('click', () => {
+      document.getElementById('btnSimpan')?.addEventListener('click', async () => {
         if (window.Components.showLoading) window.Components.showLoading('Menyimpan laporan...');
+        
+        try {
+          if (window.APP_DATA.submitLaporanPiket) {
+            const absensiArr = Object.keys(state.absensiStatus).map(s => ({ namaSiswa: s, status: state.absensiStatus[s] }));
+            await window.APP_DATA.submitLaporanPiket({
+              sesi: state.sesi,
+              catatan: state.catatan,
+              foto_url: '',
+              guru_id: window.APP_STATE && window.APP_STATE.currentGuru ? window.APP_STATE.currentGuru.id : 'G1',
+              absensi: absensiArr
+            });
+          }
+        } catch (e) {
+          console.error(e);
+        }
+
+        if (window.Components.hideLoading) window.Components.hideLoading();
+        currentStep = 5;
+        render();
         setTimeout(() => {
-          if (window.Components.hideLoading) window.Components.hideLoading();
-          currentStep = 5;
-          render();
-          setTimeout(() => {
-            if (currentStep === 5) window.Router.navigate('/guru/piket');
-          }, 2500);
-        }, 1500);
+          if (currentStep === 5) window.Router.navigate('/guru/piket');
+        }, 2500);
       });
     }
     else if (currentStep === 5) {

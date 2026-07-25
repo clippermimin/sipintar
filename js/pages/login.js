@@ -10,23 +10,6 @@
           </div>
           
           <div class="login-card">
-            <div class="demo-roles">
-              <div class="demo-role-card" id="role-admin">
-                <span class="role-emoji">👨‍💼</span>
-                <span class="role-name">Admin</span>
-              </div>
-              <div class="demo-role-card" id="role-guru">
-                <span class="role-emoji">👨‍🏫</span>
-                <span class="role-name">Guru</span>
-              </div>
-              <div class="demo-role-card" id="role-kepsek">
-                <span class="role-emoji">👔</span>
-                <span class="role-name">Kepsek</span>
-              </div>
-            </div>
-            
-            <div class="login-divider">atau masuk dengan akun</div>
-            
             <form id="login-form">
               <div class="form-group">
                 <label class="form-label">Email</label>
@@ -50,36 +33,38 @@
     setTimeout(bindEvents, 200);
   }
   
-  function handleLogin(role) {
+  async function handleLogin(e) {
+    e.preventDefault();
     Components.showLoading('Memverifikasi...');
     
-    setTimeout(() => {
+    try {
+      const email = document.querySelector('#login-form input[type="email"]').value;
+      const password = document.querySelector('#login-form input[type="password"]').value;
+      
+      const profile = await window.APP_DATA.login(email, password);
+      
       Components.hideLoading();
       
-      APP_STATE.role = role;
+      window.APP_STATE.role = profile.role;
+      window.APP_STATE.currentGuru = profile;
       
-      if (role === 'guru') {
-        APP_STATE.currentGuru = APP_DATA.getGuruById('guru-1');
+      if (profile.role === 'guru') {
         Router.navigate('/guru/dashboard');
-      } else if (role === 'admin') {
+      } else if (profile.role === 'admin') {
         Router.navigate('/admin/dashboard');
-      } else if (role === 'kepsek') {
+      } else if (profile.role === 'kepsek') {
         Router.navigate('/kepsek/dashboard');
       }
       
-      Components.toast(`Berhasil masuk sebagai ${role}`);
-    }, 800);
+      Components.toast(`Berhasil masuk sebagai ${profile.role}`);
+    } catch (error) {
+      Components.hideLoading();
+      window.Components.toast(error.message, 'error');
+    }
   }
   
   function bindEvents() {
-    document.getElementById('role-admin').addEventListener('click', () => handleLogin('admin'));
-    document.getElementById('role-guru').addEventListener('click', () => handleLogin('guru'));
-    document.getElementById('role-kepsek').addEventListener('click', () => handleLogin('kepsek'));
-    
-    document.getElementById('login-form').addEventListener('submit', (e) => {
-      e.preventDefault();
-      handleLogin('guru');
-    });
+    document.getElementById('login-form').addEventListener('submit', handleLogin);
   }
   
   Router.register('/login', render);

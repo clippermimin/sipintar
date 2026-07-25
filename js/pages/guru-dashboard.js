@@ -1,9 +1,9 @@
 (function() {
-  function render() {
+  async function render() {
     const guru = window.APP_STATE.currentGuru;
-    const isPiket = window.APP_DATA.isJadwalPiket ? window.APP_DATA.isJadwalPiket(guru.id) : false;
+    const isPiket = window.APP_DATA.isJadwalPiket ? await window.APP_DATA.isJadwalPiket(guru.id) : false;
     const isPresensiDone = window.APP_STATE.presensiDone;
-    const hariTanggal = window.APP_DATA.getHariTanggal ? window.APP_DATA.getHariTanggal() : 'Senin, 1 Januari 2026';
+    const hariTanggal = window.APP_DATA.getHariTanggal ? await window.APP_DATA.getHariTanggal() : 'Senin, 1 Januari 2026';
     const aktivitas = window.APP_DATA.aktivitasGuru || [];
 
     let piketCardHtml = '';

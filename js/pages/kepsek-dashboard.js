@@ -1,5 +1,5 @@
 (function() {
-  function render() {
+  async function render() {
     const headerHtml = window.Components.header({ 
       title: 'SIPINTER', 
       subtitle: '', 
@@ -33,7 +33,7 @@
       </div>
     `;
 
-    const guruAbsenData = window.APP_DATA.getGuruAbsenHariIni() || [];
+    const guruAbsenData = (await window.APP_DATA.getGuruAbsenHariIni()) || [];
     const guruAbsenHtml = guruAbsenData.map(item => `
       <div style="display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid #eee;">
         <div class="avatar" style="width: 40px; height: 40px; border-radius: 50%; background: #eee; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #555;">
@@ -52,7 +52,7 @@
       </div>
     `).join('');
 
-    const weeklyData = window.APP_DATA.getWeeklyData() || [];
+    const weeklyData = (await window.APP_DATA.getWeeklyData()) || [];
     const maxVal = Math.max(...weeklyData.map(d => d.value));
     const chartBars = weeklyData.map(d => `
       <div class="bar-chart-item" style="display: flex; flex-direction: column; align-items: center; gap: 8px;">

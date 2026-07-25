@@ -1,7 +1,7 @@
 (function() {
-  function render() {
+  async function render() {
     const laporanPiket = window.APP_DATA.laporanPiket || [];
-    const weeklyData = window.APP_DATA.getWeeklyData ? window.APP_DATA.getWeeklyData() : [];
+    const weeklyData = window.APP_DATA.getWeeklyData ? await window.APP_DATA.getWeeklyData() : [];
 
     const html = `
       <div class="page piket-dashboard">

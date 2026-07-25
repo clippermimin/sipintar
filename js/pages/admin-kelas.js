@@ -58,7 +58,7 @@
     `;
   }
   
-  function render() {
+  async function render() {
     const tabs = ['Semua', 'IPA', 'IPS', 'Perhotelan', 'TKJ'];
     const tabHtml = tabs.map((t, i) => `
       <div class="tab-item ${i === 0 ? 'active' : ''}" style="padding: 12px 20px; font-weight: 500; color: ${i === 0 ? '#1a73e8' : '#666'}; border-bottom: 2px solid ${i === 0 ? '#1a73e8' : 'transparent'}; cursor: pointer;">${t}</div>

@@ -58,7 +58,7 @@
     `;
   }
   
-  function render() {
+  async function render() {
     const guruList = window.APP_DATA.guru || [];
     
     let guruHtml = guruList.map(g => `
