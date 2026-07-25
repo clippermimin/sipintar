@@ -1,14 +1,20 @@
 (function() {
+  let kelasList = [];
+  let allGuru = [];
+  let blockCounter = 0;
+  
   async function render() {
     const headerHtml = window.Components.header({ 
       title: 'Laporan Piket', 
-      subtitle: 'Input Laporan', 
+      subtitle: 'Input Laporan Baru', 
       back: true, 
       backPath: '/guru/dashboard' 
     });
     
     const hariTanggal = await window.APP_DATA.getHariTanggal();
-    const kelasList = await window.APP_DATA.getAllKelas();
+    kelasList = await window.APP_DATA.getAllKelas();
+    // Assuming dummyGuru array is accessible for demo purposes, if not we can fetch profiles.
+    allGuru = window.APP_DATA.dummyGuru ? window.APP_DATA.dummyGuru.filter(g => g.role === 'guru' || g.role === 'admin') : [];
 
     const html = `
       ${headerHtml}
@@ -16,13 +22,28 @@
         <div class="p-4 pb-24">
           <div class="card mb-4">
             <div class="card-header bg-primary text-white" style="border-radius: var(--radius-xl) var(--radius-xl) 0 0; padding: 16px;">
-              <h2 style="font-size: 16px; margin: 0;">Laporan Baru</h2>
+              <h2 style="font-size: 16px; margin: 0;">Form Laporan Absensi</h2>
               <p style="margin: 4px 0 0 0; opacity: 0.9; font-size: 13px;">${hariTanggal}</p>
             </div>
             
             <div class="p-4">
               <form id="piket-form">
                 
+                <!-- Petugas Piket -->
+                <div class="form-group mb-4" style="background: #f8f9fa; padding: 12px; border-radius: 8px; border: 1px solid var(--border);">
+                  <label class="form-label" style="font-weight: 600;">Petugas Piket 1</label>
+                  <select id="petugas-1" class="form-input mb-3" required>
+                    <option value="" disabled selected>-- Pilih Petugas 1 --</option>
+                    ${allGuru.map(g => `<option value="${g.id}">${g.nama}</option>`).join('')}
+                  </select>
+                  
+                  <label class="form-label" style="font-weight: 600;">Petugas Piket 2</label>
+                  <select id="petugas-2" class="form-input" required>
+                    <option value="" disabled selected>-- Pilih Petugas 2 --</option>
+                    ${allGuru.map(g => `<option value="${g.id}">${g.nama}</option>`).join('')}
+                  </select>
+                </div>
+
                 <!-- Sesi Piket -->
                 <div class="form-group mb-4">
                   <label class="form-label" style="font-weight: 600;">Sesi Piket</label>
@@ -44,54 +65,25 @@
                   </div>
                 </div>
 
-                <!-- Pemilihan Kelas -->
-                <div class="form-group mb-4">
-                  <label class="form-label" style="font-weight: 600;">Pilih Kelas</label>
-                  <select id="select-kelas" class="form-input" required>
-                    <option value="" disabled selected>-- Pilih Kelas --</option>
-                    ${kelasList.map(k => `<option value="${k.id}">${k.nama} (${k.jurusan})</option>`).join('')}
-                  </select>
+                <hr style="margin: 24px 0; border: none; border-top: 1px dashed var(--border);" />
+
+                <!-- Container Multi-Kelas -->
+                <div id="kelas-blocks-container">
+                  <!-- Kelas blocks will be appended here -->
                 </div>
 
-                <!-- Daftar Siswa (Dynamic) -->
-                <div id="siswa-container" class="mb-4" style="display: none;">
-                  <label class="form-label" style="font-weight: 600;">Status Presensi Siswa</label>
-                  <div class="info-box mb-3" style="font-size: 13px;">
-                    Centang siswa yang <b>TIDAK HADIR</b> (Sakit/Izin/Alpha). Biarkan kosong jika hadir.
-                  </div>
-                  <div id="siswa-list" style="max-height: 250px; overflow-y: auto; border: 1px solid var(--border); border-radius: var(--radius-md); padding: 8px;">
-                    <!-- Diisi via JS -->
-                  </div>
-                </div>
+                <button type="button" id="btn-add-kelas" class="btn btn-outline btn-full mb-4" style="border-style: dashed; padding: 12px;">
+                  <span class="material-icons-outlined" style="margin-right: 8px;">add_circle_outline</span>
+                  Tambah Kelas
+                </button>
 
                 <!-- Catatan -->
-                <div class="form-group mb-4">
-                  <label class="form-label" style="font-weight: 600;">Catatan Kejadian</label>
-                  <textarea id="catatan" class="form-input" rows="3" placeholder="Tuliskan catatan kejadian selama piket..." required></textarea>
-                </div>
-
-                <!-- Bukti Foto -->
-                <div class="form-group mb-4">
-                  <label class="form-label" style="font-weight: 600;">Bukti Foto (Opsional)</label>
-                  <div class="upload-area" onclick="document.getElementById('foto-upload').click()">
-                    <span class="material-icons-outlined" style="font-size: 32px; color: var(--text-secondary); margin-bottom: 8px;">add_a_photo</span>
-                    <p style="margin: 0; color: var(--text-secondary); font-size: 13px;">Tap untuk ambil foto</p>
-                    <input type="file" id="foto-upload" accept="image/*" style="display: none;">
-                  </div>
-                </div>
-
-                <!-- Tanda Tangan -->
-                <div class="form-group mb-4">
-                  <label class="form-label" style="font-weight: 600;">Tanda Tangan Guru Piket</label>
-                  <div style="border: 1px solid var(--border); border-radius: var(--radius-md); background: #f8f9fa;">
-                    <canvas id="sig-pad" width="300" height="150" style="width: 100%; touch-action: none; display: block;"></canvas>
-                  </div>
-                  <div style="text-align: right; margin-top: 8px;">
-                    <button type="button" id="btn-clear-sig" class="btn btn-outline" style="padding: 4px 12px; font-size: 12px;">Hapus</button>
-                  </div>
+                <div class="form-group mb-4 mt-4">
+                  <label class="form-label" style="font-weight: 600;">Catatan Umum</label>
+                  <textarea id="catatan" class="form-input" rows="3" placeholder="Tuliskan catatan kejadian penting selama piket..." required></textarea>
                 </div>
                 
-                <button type="submit" id="btn-simpan" class="btn btn-primary btn-full btn-lg mt-4">Kirim Laporan</button>
+                <button type="submit" id="btn-simpan" class="btn btn-primary btn-full btn-lg mt-4">Simpan Laporan</button>
               </form>
             </div>
           </div>
@@ -100,154 +92,131 @@
     `;
     
     window.Components.renderPage(html);
-    setTimeout(bindEvents, 200);
+    
+    // Auto set Petugas 1 to current user
+    if (window.APP_STATE?.currentGuru?.id) {
+      setTimeout(() => {
+        const p1 = document.getElementById('petugas-1');
+        if (p1) p1.value = window.APP_STATE.currentGuru.id;
+      }, 100);
+    }
+    
+    setTimeout(() => {
+      bindEvents();
+      addKelasBlock(); // Add first block by default
+    }, 200);
   }
   
-  function bindEvents() {
-    const selectKelas = document.getElementById('select-kelas');
-    const siswaContainer = document.getElementById('siswa-container');
-    const siswaList = document.getElementById('siswa-list');
+  function addKelasBlock() {
+    blockCounter++;
+    const blockId = `kelas-block-${blockCounter}`;
     
-    // Signature Pad Setup
-    const canvas = document.getElementById('sig-pad');
-    const ctx = canvas.getContext('2d');
-    let isDrawing = false;
+    const blockHtml = `
+      <div id="${blockId}" class="kelas-block mb-4" style="border: 1px solid var(--primary); border-radius: 8px; padding: 12px; background: #fff;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <label class="form-label" style="font-weight: 600; margin: 0; color: var(--primary);">Data Kelas ${blockCounter}</label>
+          ${blockCounter > 1 ? `<button type="button" class="btn-remove-block" data-target="${blockId}" style="background:none; border:none; color: var(--error); cursor:pointer;"><span class="material-icons-outlined">delete</span></button>` : ''}
+        </div>
+        
+        <select class="form-input select-kelas-dinamis" data-block="${blockId}" required>
+          <option value="" disabled selected>-- Pilih Kelas --</option>
+          ${kelasList.map(k => `<option value="${k.id}">${k.nama}</option>`).join('')}
+        </select>
+        
+        <div class="siswa-container mt-3" id="siswa-container-${blockId}" style="display: none;">
+          <p style="font-size: 13px; color: var(--error); margin-bottom: 8px; font-weight: 500;">
+            * Centang nama siswa yang TIDAK HADIR
+          </p>
+          <div class="siswa-list" id="siswa-list-${blockId}" style="max-height: 200px; overflow-y: auto; border: 1px solid var(--border); border-radius: 4px; padding: 8px; background: #fafafa;">
+            <!-- Checkboxes will be injected here -->
+          </div>
+        </div>
+      </div>
+    `;
     
-    function getCoordinates(e) {
-      const rect = canvas.getBoundingClientRect();
-      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-      // Calculate scale since canvas display size might differ from actual width/height attrs
-      const scaleX = canvas.width / rect.width;
-      const scaleY = canvas.height / rect.height;
-      return {
-        x: (clientX - rect.left) * scaleX,
-        y: (clientY - rect.top) * scaleY
-      };
+    document.getElementById('kelas-blocks-container').insertAdjacentHTML('beforeend', blockHtml);
+    
+    // Bind remove button for this specific block
+    if (blockCounter > 1) {
+      document.querySelector(`#${blockId} .btn-remove-block`).addEventListener('click', function() {
+        document.getElementById(blockId).remove();
+      });
     }
     
-    function startDrawing(e) {
-      isDrawing = true;
-      const coords = getCoordinates(e);
-      ctx.beginPath();
-      ctx.moveTo(coords.x, coords.y);
-      e.preventDefault(); // Prevent scrolling on touch
-    }
-    
-    function draw(e) {
-      if (!isDrawing) return;
-      const coords = getCoordinates(e);
-      ctx.lineTo(coords.x, coords.y);
-      ctx.stroke();
-      e.preventDefault();
-    }
-    
-    function stopDrawing() {
-      isDrawing = false;
-    }
-    
-    ctx.lineWidth = 2;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    ctx.strokeStyle = '#333';
-    
-    canvas.addEventListener('mousedown', startDrawing);
-    canvas.addEventListener('mousemove', draw);
-    canvas.addEventListener('mouseup', stopDrawing);
-    canvas.addEventListener('mouseout', stopDrawing);
-    
-    canvas.addEventListener('touchstart', startDrawing, {passive: false});
-    canvas.addEventListener('touchmove', draw, {passive: false});
-    canvas.addEventListener('touchend', stopDrawing);
-    
-    document.getElementById('btn-clear-sig').addEventListener('click', () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-    });
-
-    // Handle Kelas Selection
-    selectKelas.addEventListener('change', async (e) => {
+    // Bind dropdown change
+    document.querySelector(`#${blockId} .select-kelas-dinamis`).addEventListener('change', async function(e) {
       const kelasId = e.target.value;
-      if (!kelasId) {
-        siswaContainer.style.display = 'none';
-        return;
-      }
+      const container = document.getElementById(`siswa-container-${blockId}`);
+      const list = document.getElementById(`siswa-list-${blockId}`);
       
-      siswaContainer.style.display = 'block';
-      siswaList.innerHTML = '<div style="padding: 12px; text-align: center; color: #666;">Memuat siswa...</div>';
+      container.style.display = 'block';
+      list.innerHTML = '<div style="text-align:center; font-size:12px; color:#666;">Memuat data siswa...</div>';
       
       const siswa = await window.APP_DATA.getSiswaByKelas(kelasId);
       
-      if (siswa.length === 0) {
-        siswaList.innerHTML = '<div style="padding: 12px; text-align: center; color: #666;">Tidak ada data siswa.</div>';
+      if (!siswa || siswa.length === 0) {
+        list.innerHTML = '<div style="text-align:center; font-size:12px; color:#666;">Data siswa kosong.</div>';
         return;
       }
       
-      siswaList.innerHTML = siswa.map((nama, idx) => `
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #eee;">
-          <span style="font-size: 14px; font-weight: 500;">${nama}</span>
-          <select class="form-input absen-select" data-nama="${nama}" style="width: auto; padding: 4px 8px; font-size: 13px;">
-            <option value="Hadir">Hadir</option>
-            <option value="Sakit">Sakit</option>
-            <option value="Izin">Izin</option>
-            <option value="Alpha">Alpha</option>
-          </select>
-        </div>
+      list.innerHTML = siswa.map((nama, idx) => `
+        <label style="display: flex; align-items: center; padding: 8px 4px; border-bottom: 1px solid #eee; cursor: pointer;">
+          <input type="checkbox" class="absen-checkbox" data-nama="${nama}" data-kelas="${kelasId}" style="margin-right: 12px; transform: scale(1.2);">
+          <span style="font-size: 14px;">${nama}</span>
+        </label>
       `).join('');
     });
+  }
+  
+  function bindEvents() {
+    document.getElementById('btn-add-kelas').addEventListener('click', addKelasBlock);
     
-    // Handle Form Submit
     document.getElementById('piket-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       
-      // Check if signature is empty
-      const blankCanvas = document.createElement('canvas');
-      blankCanvas.width = canvas.width;
-      blankCanvas.height = canvas.height;
-      if (canvas.toDataURL() === blankCanvas.toDataURL()) {
-        window.Components.toast('Tanda tangan wajib diisi', 'error');
+      const p1 = document.getElementById('petugas-1').value;
+      const p2 = document.getElementById('petugas-2').value;
+      
+      if (!p1 || !p2) {
+        window.Components.toast('Petugas 1 dan 2 harus dipilih', 'error');
+        return;
+      }
+      if (p1 === p2) {
+        window.Components.toast('Petugas 1 dan 2 tidak boleh sama', 'error');
         return;
       }
       
-      if (!selectKelas.value) {
-        window.Components.toast('Silakan pilih kelas', 'error');
-        return;
-      }
+      // Collect absensi
+      const checkboxes = document.querySelectorAll('.absen-checkbox:checked');
+      const absensi = Array.from(checkboxes).map(cb => ({
+        namaSiswa: cb.getAttribute('data-nama'),
+        kelas_id: cb.getAttribute('data-kelas'),
+        status: 'Tidak Hadir'
+      }));
       
       const btnSimpan = document.getElementById('btn-simpan');
       btnSimpan.innerHTML = 'Menyimpan...';
       btnSimpan.disabled = true;
       
-      // Collect absensi
-      const absensiSelects = document.querySelectorAll('.absen-select');
-      const absensi = [];
-      absensiSelects.forEach(sel => {
-        if (sel.value !== 'Hadir') {
-          absensi.push({
-            namaSiswa: sel.getAttribute('data-nama'),
-            status: sel.value
-          });
-        }
-      });
-      
       try {
         const data = {
           sesi: document.querySelector('input[name="sesi"]:checked').value,
           catatan: document.getElementById('catatan').value,
-          foto_url: null, // Dummy since no real upload
-          guru_id: window.APP_STATE?.currentGuru?.id || 'd-guru-1',
+          petugas_1: p1,
+          petugas_2: p2,
           absensi: absensi,
           status: 'Selesai'
         };
         
         await window.APP_DATA.submitLaporanPiket(data);
-        window.Components.toast('Laporan berhasil disimpan!');
+        window.Components.toast('Laporan berhasil disimpan!', 'success');
         
         setTimeout(() => {
           window.Router.navigate('/guru/dashboard');
         }, 1500);
       } catch (error) {
         window.Components.toast('Gagal menyimpan laporan', 'error');
-        btnSimpan.innerHTML = 'Kirim Laporan';
+        btnSimpan.innerHTML = 'Simpan Laporan';
         btnSimpan.disabled = false;
       }
     });

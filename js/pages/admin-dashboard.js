@@ -5,7 +5,6 @@
       { id: 'guru', icon: 'people', label: 'Guru', path: '/admin/guru' },
       { id: 'siswa', icon: 'school', label: 'Siswa', path: '/admin/siswa' },
       { id: 'kelas', icon: 'class', label: 'Kelas', path: '/admin/kelas' },
-      { id: 'jadwal', icon: 'event_note', label: 'Jadwal Piket', path: '/admin/jadwal' },
       { id: 'laporan', icon: 'description', label: 'Laporan', path: '/admin/laporan' },
       { id: 'export', icon: 'download', label: 'Export', path: '/export' },
       { id: 'setting', icon: 'settings', label: 'Pengaturan', path: '#' },
@@ -142,10 +141,6 @@
         <button onclick="window.Router.navigate('/admin/siswa')" class="btn btn-outline" style="padding: 16px; display: flex; flex-direction: column; align-items: center; gap: 8px; border: 1px solid #e0e0e0; border-radius: 8px; background: white; cursor: pointer;">
           <span class="material-icons-outlined" style="font-size: 24px; color: #388e3c;">school</span>
           Kelola Siswa
-        </button>
-        <button onclick="window.Router.navigate('/admin/jadwal')" class="btn btn-outline" style="padding: 16px; display: flex; flex-direction: column; align-items: center; gap: 8px; border: 1px solid #e0e0e0; border-radius: 8px; background: white; cursor: pointer;">
-          <span class="material-icons-outlined" style="font-size: 24px; color: #f57c00;">event_note</span>
-          Jadwal Piket
         </button>
         <button onclick="window.Router.navigate('/export')" class="btn btn-outline" style="padding: 16px; display: flex; flex-direction: column; align-items: center; gap: 8px; border: 1px solid #e0e0e0; border-radius: 8px; background: white; cursor: pointer;">
           <span class="material-icons-outlined" style="font-size: 24px; color: #7b1fa2;">download</span>

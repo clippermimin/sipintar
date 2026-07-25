@@ -145,7 +145,7 @@ window.APP_DATA = {
   },
   
   async submitLaporanPiket(laporanData) {
-    // laporanData = { sesi, catatan, foto_url, status, guru_id, absensi: [{namaSiswa, status}] }
+    // laporanData = { sesi, catatan, petugas_1, petugas_2, absensi: [{namaSiswa, kelas_id, status}] }
     
     // 1. Insert Laporan
     const { data: laporan, error: lapErr } = await window.supabase
@@ -153,9 +153,8 @@ window.APP_DATA = {
       .insert({
         tanggal: new Date().toISOString().split('T')[0],
         sesi: laporanData.sesi,
-        guru_id: laporanData.guru_id,
-        catatan: laporanData.catatan,
-        foto_url: laporanData.foto_url,
+        guru_id: laporanData.petugas_1, // Using petugas_1 as main guru_id for backward compatibility
+        catatan: `[Petugas 1: ${laporanData.petugas_1}, Petugas 2: ${laporanData.petugas_2}] ` + laporanData.catatan,
         status: laporanData.status || 'Selesai'
       })
       .select()

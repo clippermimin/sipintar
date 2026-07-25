@@ -5,7 +5,6 @@
       { id: 'guru', icon: 'people', label: 'Guru', path: '/admin/guru' },
       { id: 'siswa', icon: 'school', label: 'Siswa', path: '/admin/siswa' },
       { id: 'kelas', icon: 'class', label: 'Kelas', path: '/admin/kelas' },
-      { id: 'jadwal', icon: 'event_note', label: 'Jadwal Piket', path: '/admin/jadwal' },
       { id: 'laporan', icon: 'description', label: 'Laporan', path: '/admin/laporan' },
       { id: 'export', icon: 'download', label: 'Export', path: '/export' },
       { id: 'setting', icon: 'settings', label: 'Pengaturan', path: '#' },

@@ -41,38 +41,11 @@ window.Components = {
   
   // Bottom navigation for Guru
   bottomNavGuru(active = 'dashboard') {
-    const isPiket = APP_DATA.isJadwalPiket(APP_STATE.currentGuru?.id);
     let items = [
       { id: 'dashboard', icon: 'dashboard', label: 'Dashboard', path: '/guru/dashboard' },
-    ];
-    if (isPiket) {
-      items.push({ id: 'piket', icon: 'assignment', label: 'Piket', path: '/guru/piket' });
-    }
-    items.push(
+      { id: 'piket', icon: 'assignment', label: 'Piket', path: '/guru/piket' },
       { id: 'absensi', icon: 'person_search', label: 'Absensi', path: '/guru/presensi' },
       { id: 'profil', icon: 'account_circle', label: 'Profil', path: '#' }
-    );
-    
-    return `
-      <nav class="bottom-nav">
-        ${items.map(item => `
-          <a class="bottom-nav-item ${active === item.id ? 'active' : ''}" onclick="Router.navigate('${item.path}')" href="javascript:void(0)">
-            <span class="material-icons-outlined">${item.icon}</span>
-            <span>${item.label}</span>
-          </a>
-        `).join('')}
-      </nav>
-    `;
-  },
-  
-  // Bottom navigation for Kepala Sekolah
-  bottomNavKepsek(active = 'dashboard') {
-    const items = [
-      { id: 'dashboard', icon: 'dashboard', label: 'Dashboard', path: '/kepsek/dashboard' },
-      { id: 'laporan', icon: 'description', label: 'Laporan', path: '/kepsek/dashboard' },
-      { id: 'absensi', icon: 'fact_check', label: 'Absensi', path: '/kepsek/dashboard' },
-      { id: 'riwayat', icon: 'history', label: 'Riwayat', path: '/kepsek/dashboard' },
-      { id: 'menu', icon: 'more_horiz', label: 'Menu', path: '/kepsek/dashboard' },
     ];
     
     return `
@@ -87,6 +60,7 @@ window.Components = {
     `;
   },
   
+
   // Toast notification
   toast(message, type = 'success') {
     const container = document.getElementById('toast-container');

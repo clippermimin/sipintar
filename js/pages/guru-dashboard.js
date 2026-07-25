@@ -1,24 +1,10 @@
 (function() {
   async function render() {
-    const guru = window.APP_STATE.currentGuru;
-    const isPiket = window.APP_DATA.isJadwalPiket ? await window.APP_DATA.isJadwalPiket(guru.id) : false;
+    const guru = window.APP_STATE.currentGuru || {};
     const isPresensiDone = window.APP_STATE.presensiDone;
     const hariTanggal = window.APP_DATA.getHariTanggal ? await window.APP_DATA.getHariTanggal() : 'Senin, 1 Januari 2026';
-    const aktivitas = window.APP_DATA.aktivitasGuru || [];
-
-    let piketCardHtml = '';
-    if (isPiket) {
-      piketCardHtml = `
-        <div class="card piket-card" style="border-left: 4px solid var(--warning, orange); margin-bottom: 1rem;">
-          <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
-            <span class="material-icons-outlined" style="color: var(--warning, orange);">assignment</span>
-            <span style="font-weight: 500;">🔔 Hari ini Anda bertugas sebagai Guru Piket</span>
-          </div>
-          <button id="btnLanjutPiket" class="btn btn-secondary btn-full">Lanjutkan Laporan Piket</button>
-        </div>
-      `;
-    }
-
+    const aktivitas = window.APP_DATA.getAktivitasGuru ? await window.APP_DATA.getAktivitasGuru() : [];
+    
     const html = `
       <div class="page guru-dashboard">
         ${window.Components.header({ title: 'Dashboard', subtitle: 'SIPINTER', notif: true, avatar: true, avatarText: guru.avatar })}
@@ -50,7 +36,7 @@
             <span style="font-weight: 500;">Presensi Selfie</span>
           </div>
 
-          ${piketCardHtml}
+
 
           <div class="section-title" style="margin-bottom: 1rem;">Aktivitas Terakhir</div>
           <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 2rem;">
@@ -84,13 +70,6 @@
     if (btnPresensi) {
       btnPresensi.addEventListener('click', () => {
         window.Router.navigate('/guru/presensi');
-      });
-    }
-
-    const btnLanjutPiket = document.getElementById('btnLanjutPiket');
-    if (btnLanjutPiket) {
-      btnLanjutPiket.addEventListener('click', () => {
-        window.Router.navigate('/guru/piket');
       });
     }
   }

@@ -35,10 +35,6 @@
                 <span class="role-emoji">👨‍💼</span>
                 <span class="role-name">Admin</span>
               </div>
-              <div class="demo-role-card" id="role-kepsek">
-                <span class="role-emoji">👔</span>
-                <span class="role-name">Kepsek</span>
-              </div>
             </div>
           </div>
           
@@ -70,8 +66,6 @@
         Router.navigate('/guru/dashboard');
       } else if (profile.role === 'admin') {
         Router.navigate('/admin/dashboard');
-      } else if (profile.role === 'kepsek') {
-        Router.navigate('/kepsek/dashboard');
       }
       
       Components.toast(`Berhasil masuk sebagai ${profile.role}`);
@@ -92,7 +86,6 @@
     
     document.getElementById('role-guru').addEventListener('click', () => setLogin('budi@sipinter.id'));
     document.getElementById('role-admin').addEventListener('click', () => setLogin('admin@sipinter.id'));
-    document.getElementById('role-kepsek').addEventListener('click', () => setLogin('kepsek@sipinter.id'));
   }
   
   Router.register('/login', render);
