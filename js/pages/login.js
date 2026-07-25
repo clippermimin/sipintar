@@ -26,7 +26,7 @@
           
           <div class="login-demo-roles">
             <p class="demo-title">Login Cepat (Demo):</p>
-            <div class="demo-roles-grid">
+            <div class="demo-roles">
               <div class="demo-role-card" id="role-guru">
                 <span class="role-emoji">👨‍🏫</span>
                 <span class="role-name">Guru/Piket</span>
