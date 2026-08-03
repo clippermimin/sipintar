@@ -114,9 +114,10 @@
     
     const blockHtml = `
       <div id="${blockId}" class="kelas-block mb-4" style="border: 1px solid var(--primary); border-radius: 8px; padding: 12px; background: #fff;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-          <label class="form-label" style="font-weight: 600; margin: 0; color: var(--primary);">Data Kelas ${blockCounter}</label>
-          ${blockCounter > 1 ? `<button type="button" class="btn-remove-block" data-target="${blockId}" style="background:none; border:none; color: var(--error); cursor:pointer;"><span class="material-icons-outlined">delete</span></button>` : ''}
+        ${blockCounter > 1 ? `
+        <div style="display: flex; justify-content: flex-end; margin-bottom: 8px;">
+          <button type="button" class="btn-remove-block" data-target="${blockId}" style="background:none; border:none; color: var(--error); cursor:pointer;"><span class="material-icons-outlined">delete</span></button>
+        </div>` : ''}
         </div>
         
         <select class="form-input select-kelas-dinamis" data-block="${blockId}" required>
