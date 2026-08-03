@@ -33,6 +33,7 @@ window.checkAuth = async function() {
 window.supabase.auth.onAuthStateChange((event, session) => {
   if (event === 'SIGNED_IN' && session) {
     window.loadProfileAndRedirect(session.user.id).then(profile => {
+      window.Components.hideLoading();
       if (profile) {
         const currentPath = window.Router.getCurrentPath();
         if (currentPath === '/login' || currentPath === '/') {
@@ -41,11 +42,18 @@ window.supabase.auth.onAuthStateChange((event, session) => {
         } else {
           window.Router.handleRoute();
         }
+      } else {
+        window.Components.toast('Profil belum didaftarkan di tabel profiles. Silakan tambahkan UID ke tabel profiles.', 'error');
+        window.supabase.auth.signOut();
       }
+    }).catch(err => {
+      window.Components.hideLoading();
+      console.error(err);
     });
   } else if (event === 'SIGNED_OUT') {
     window.APP_STATE.role = null;
     window.APP_STATE.currentGuru = null;
+    window.Components.hideLoading();
     window.Router.navigate('/login');
   }
 });
