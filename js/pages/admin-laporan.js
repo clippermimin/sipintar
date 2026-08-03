@@ -5,8 +5,8 @@
       { id: 'guru', icon: 'people', label: 'Guru', path: '/admin/guru' },
       { id: 'siswa', icon: 'school', label: 'Siswa', path: '/admin/siswa' },
       { id: 'kelas', icon: 'class', label: 'Kelas', path: '/admin/kelas' },
-      { id: 'laporan', icon: 'description', label: 'Laporan', path: '/admin/laporan' },
-      { id: 'export', icon: 'download', label: 'Export', path: '/export' },
+      { id: 'laporan', icon: 'description', label: 'Laporan Piket', path: '/admin/laporan' },
+      { id: 'export', icon: 'download', label: 'Laporan Presensi', path: '/export' },
       { id: 'setting', icon: 'settings', label: 'Pengaturan', path: '#' },
     ];
     
