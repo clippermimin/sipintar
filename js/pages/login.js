@@ -24,6 +24,21 @@
             </form>
           </div>
           
+          <div class="login-demo-roles">
+            <p class="demo-title">Login Cepat (Akun Demo):</p>
+            <div class="demo-roles">
+              <div class="demo-role-card" id="role-guru">
+                <span class="role-emoji">👨‍🏫</span>
+                <span class="role-name">Guru/Piket</span>
+              </div>
+              <div class="demo-role-card" id="role-admin">
+                <span class="role-emoji">👨‍💼</span>
+                <span class="role-name">Admin</span>
+              </div>
+            </div>
+            <p style="font-size: 11px; text-align: center; color: #888; margin-top: 8px;">*Pastikan kamu sudah mendaftarkan email ini di Supabase Auth</p>
+          </div>
+          
           ${Components.footer()}
         </div>
       </div>
@@ -55,6 +70,15 @@
   
   function bindEvents() {
     document.getElementById('login-form').addEventListener('submit', handleLogin);
+    
+    const setLogin = (email) => {
+      document.querySelector('#login-form input[type="email"]').value = email;
+      document.querySelector('#login-form input[type="password"]').value = 'password123';
+      document.getElementById('login-form').dispatchEvent(new Event('submit', { cancelable: true }));
+    };
+    
+    document.getElementById('role-guru').addEventListener('click', () => setLogin('budi@sipinter.id'));
+    document.getElementById('role-admin').addEventListener('click', () => setLogin('admin@sipinter.id'));
   }
   
   Router.register('/login', render);
