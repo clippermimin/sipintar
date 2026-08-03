@@ -36,7 +36,7 @@
             ${menuHtml}
           </div>
           <div style="padding: 16px 0; border-top: 1px solid #eee;">
-            <a href="javascript:void(0)" onclick="window.APP_STATE.role = null; window.APP_STATE.currentGuru = null; window.Router.navigate('/login')" class="admin-sidebar-item" style="color: #EA4335;">
+            <a href="javascript:void(0)" onclick="window.APP_DATA.logout()" class="admin-sidebar-item" style="color: #EA4335;">
               <span class="material-icons-outlined">logout</span>
               <span>Keluar</span>
             </a>
@@ -45,11 +45,48 @@
         <div class="admin-content" style="flex: 1; margin-left: 260px; padding: 24px; min-height: 100vh; background: #f8f9fa;">
           ${content}
         </div>
+        <!-- Modal Form Kelas -->
+        <div id="modalKelas" class="modal-overlay hidden" style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; display: none; align-items: center; justify-content: center;">
+          <div style="background: white; width: 100%; max-width: 400px; border-radius: 12px; padding: 24px;">
+            <h3 id="modalTitleKelas" style="margin-top: 0;">Tambah Kelas</h3>
+            <form id="formKelas">
+              <input type="hidden" id="kelasId">
+              <div class="form-group mb-3">
+                <label class="form-label">Nama Kelas (misal: X IPA 1)</label>
+                <input type="text" id="kelasNama" class="form-input" required placeholder="X IPA 1">
+              </div>
+              <div class="form-group mb-3">
+                <label class="form-label">Jenjang</label>
+                <select id="kelasJenjang" class="form-input" required>
+                  <option value="">-- Pilih Jenjang --</option>
+                  <option value="X">X</option>
+                  <option value="XI">XI</option>
+                  <option value="XII">XII</option>
+                </select>
+              </div>
+              <div class="form-group mb-4">
+                <label class="form-label">Jurusan</label>
+                <select id="kelasJurusan" class="form-input" required>
+                  <option value="">-- Pilih Jurusan --</option>
+                  <option value="IPA">IPA</option>
+                  <option value="IPS">IPS</option>
+                  <option value="Perhotelan">Perhotelan</option>
+                  <option value="TKJ">TKJ</option>
+                </select>
+              </div>
+              <div style="display: flex; gap: 12px; justify-content: flex-end;">
+                <button type="button" id="btnBatalKelas" class="btn btn-outline">Batal</button>
+                <button type="submit" class="btn btn-primary">Simpan</button>
+              </div>
+            </form>
+          </div>
+        </div>
         <style>
           .admin-page { display: flex; min-height: 100vh; }
           .admin-sidebar-item { display: flex; align-items: center; gap: 12px; padding: 12px 24px; color: #5f6368; text-decoration: none; font-weight: 500; transition: background 0.2s; }
           .admin-sidebar-item:hover { background: #f1f3f4; color: #1a73e8; }
           .admin-sidebar-item.active { background: #e8f0fe; color: #1a73e8; border-right: 4px solid #1a73e8; }
+          .modal-overlay:not(.hidden) { display: flex !important; }
           @media (min-width: 769px) { .admin-mobile-header { display: none !important; } #adminDrawerOverlay { display: none !important; } #btnCloseDrawer { display: none !important; } }
           @media (max-width: 768px) { .admin-page { flex-direction: column; } .admin-content { margin-left: 0 !important; padding: 16px !important; } .admin-sidebar { transform: translateX(-100%); } .admin-sidebar.open { transform: translateX(0); } }
         </style>
@@ -58,38 +95,55 @@
   }
   
   async function render() {
-    const tabs = ['Semua', 'IPA', 'IPS', 'Perhotelan', 'TKJ'];
-    const tabHtml = tabs.map((t, i) => `
-      <div class="tab-item ${i === 0 ? 'active' : ''}" style="padding: 12px 20px; font-weight: 500; color: ${i === 0 ? '#1a73e8' : '#666'}; border-bottom: 2px solid ${i === 0 ? '#1a73e8' : 'transparent'}; cursor: pointer;">${t}</div>
-    `).join('');
+    window.Components.showLoading();
+    
+    const { data: kelasList, error } = await window.supabase
+      .from('kelas')
+      .select('*, siswa(count)')
+      .order('jenjang')
+      .order('nama');
 
-    const kelasList = window.APP_DATA.kelas || [];
-    const listHtml = kelasList.map(k => {
-      let badgeColor = k.jurusan === 'IPA' ? '#e8f5e9' : (k.jurusan === 'IPS' ? '#fff3e0' : '#e3f2fd');
-      let textColor = k.jurusan === 'IPA' ? '#2e7d32' : (k.jurusan === 'IPS' ? '#ef6c00' : '#1565c0');
-      
+    window.Components.hideLoading();
+    
+    if (error) {
+      window.Components.toast('Gagal memuat data kelas', 'error');
+      return;
+    }
+
+    const jurusanColors = {
+      'IPA': { bg: '#e8f5e9', text: '#2e7d32' },
+      'IPS': { bg: '#fff3e0', text: '#ef6c00' },
+      'Perhotelan': { bg: '#e3f2fd', text: '#1565c0' },
+      'TKJ': { bg: '#f3e5f5', text: '#7b1fa2' },
+    };
+
+    const listHtml = (kelasList || []).map(k => {
+      const color = jurusanColors[k.jurusan] || { bg: '#f5f5f5', text: '#333' };
+      const jumlahSiswa = k.siswa?.[0]?.count ?? 0;
       return `
-        <div class="card kelas-card" style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+        <div class="card kelas-card" style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); transition: transform 0.2s; position: relative;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-            <h3 style="margin: 0; font-size: 18px; color: #333;">Kelas ${k.nama}</h3>
-            <span class="badge" style="background: ${badgeColor}; color: ${textColor}; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 500;">${k.jurusan}</span>
+            <h3 style="margin: 0; font-size: 18px; color: #333;">${k.nama}</h3>
+            <span class="badge" style="background: ${color.bg}; color: ${color.text}; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 500;">${k.jurusan}</span>
           </div>
-          <div style="display: flex; align-items: center; gap: 8px; color: #666; font-size: 14px;">
+          <div style="display: flex; align-items: center; gap: 8px; color: #666; font-size: 14px; margin-bottom: 12px;">
             <span class="material-icons-outlined" style="font-size: 18px;">people</span>
-            <span>32 Siswa</span>
+            <span>${jumlahSiswa} Siswa</span>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn btn-outline edit-kelas-btn" data-id="${k.id}" data-nama="${k.nama}" data-jenjang="${k.jenjang}" data-jurusan="${k.jurusan}" style="padding: 6px 12px; border: 1px solid #1a73e8; color: #1a73e8; border-radius: 6px; background: white; cursor: pointer; font-size: 13px;">Edit</button>
+            <button class="btn btn-outline del-kelas-btn" data-id="${k.id}" style="padding: 6px 12px; border: 1px solid #ea4335; color: #ea4335; border-radius: 6px; background: white; cursor: pointer; font-size: 13px;">Hapus</button>
           </div>
         </div>
       `;
-    }).join('');
+    }).join('') || '<p style="color:#666;">Belum ada data kelas.</p>';
 
     const content = `
-      <div style="margin-bottom: 24px;">
-        <h1 style="margin: 0 0 8px 0; font-size: 24px; color: #333;">Kelola Kelas</h1>
-        <p style="margin: 0; color: #666;">Tahun Ajaran 2026/2027</p>
-      </div>
-      
-      <div class="tab-bar" style="display: flex; border-bottom: 1px solid #ddd; margin-bottom: 24px; overflow-x: auto;">
-        ${tabHtml}
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+        <div>
+          <h1 style="margin: 0 0 8px 0; font-size: 24px; color: #333;">Kelola Kelas</h1>
+          <span class="badge" style="background: #e3f2fd; color: #1976d2; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 500;">${(kelasList || []).length} Kelas</span>
+        </div>
       </div>
 
       <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 16px;">
@@ -116,14 +170,75 @@
     if (btnCloseDrawer) btnCloseDrawer.addEventListener('click', () => { sidebar.classList.remove('open'); overlay.classList.add('hidden'); });
     if (overlay) overlay.addEventListener('click', () => { sidebar.classList.remove('open'); overlay.classList.add('hidden'); });
 
-    document.querySelectorAll('.kelas-card').forEach(card => {
-      card.addEventListener('click', () => {
-        window.Components.toast('Demo: Detail kelas', 'info');
+    const modal = document.getElementById('modalKelas');
+    const form = document.getElementById('formKelas');
+
+    document.getElementById('btnTambahKelas').addEventListener('click', () => {
+      document.getElementById('modalTitleKelas').innerText = 'Tambah Kelas';
+      form.reset();
+      document.getElementById('kelasId').value = '';
+      modal.classList.remove('hidden');
+    });
+
+    document.getElementById('btnBatalKelas').addEventListener('click', () => {
+      modal.classList.add('hidden');
+    });
+
+    document.querySelectorAll('.edit-kelas-btn').forEach(btn => {
+      btn.addEventListener('click', e => {
+        const b = e.target;
+        document.getElementById('modalTitleKelas').innerText = 'Edit Kelas';
+        document.getElementById('kelasId').value = b.dataset.id;
+        document.getElementById('kelasNama').value = b.dataset.nama;
+        document.getElementById('kelasJenjang').value = b.dataset.jenjang;
+        document.getElementById('kelasJurusan').value = b.dataset.jurusan;
+        modal.classList.remove('hidden');
       });
     });
 
-    document.getElementById('btnTambahKelas').addEventListener('click', () => {
-      window.Components.toast('Demo: Tambah Kelas Baru', 'info');
+    document.querySelectorAll('.del-kelas-btn').forEach(btn => {
+      btn.addEventListener('click', async e => {
+        if (confirm('Yakin ingin menghapus kelas ini? Semua data siswa dalam kelas ini juga akan terhapus!')) {
+          window.Components.showLoading();
+          const { error } = await window.supabase.from('kelas').delete().eq('id', e.target.dataset.id);
+          window.Components.hideLoading();
+          if (error) {
+            window.Components.toast('Gagal menghapus kelas', 'error');
+          } else {
+            window.Components.toast('Kelas berhasil dihapus');
+            render();
+          }
+        }
+      });
+    });
+
+    form.addEventListener('submit', async e => {
+      e.preventDefault();
+      const id = document.getElementById('kelasId').value;
+      const nama = document.getElementById('kelasNama').value.trim();
+      const jenjang = document.getElementById('kelasJenjang').value;
+      const jurusan = document.getElementById('kelasJurusan').value;
+      // Auto-generate ID from name if new
+      const kelasId = id || nama.toLowerCase().replace(/\s+/g, '-');
+      const data = { id: kelasId, nama, jenjang, jurusan };
+
+      window.Components.showLoading();
+      let error;
+      if (id) {
+        const res = await window.supabase.from('kelas').update({ nama, jenjang, jurusan }).eq('id', id);
+        error = res.error;
+      } else {
+        const res = await window.supabase.from('kelas').insert([data]);
+        error = res.error;
+      }
+      window.Components.hideLoading();
+      if (error) {
+        window.Components.toast('Gagal menyimpan: ' + (error.message || ''), 'error');
+      } else {
+        window.Components.toast('Kelas berhasil disimpan');
+        modal.classList.add('hidden');
+        render();
+      }
     });
   }
 

@@ -1,7 +1,44 @@
 (function() {
   async function render() {
-    const laporanPiket = window.APP_DATA.laporanPiket || [];
-    const weeklyData = window.APP_DATA.getWeeklyData ? await window.APP_DATA.getWeeklyData() : [];
+    window.Components.showLoading();
+    const guru = window.APP_STATE.currentGuru || {};
+    const guruId = guru.id;
+
+    // Fetch riwayat laporan milik guru ini dari Supabase
+    const { data: laporanList } = await window.supabase
+      .from('laporan_piket')
+      .select('id, tanggal, sesi, status')
+      .eq('guru_id', guruId)
+      .order('created_at', { ascending: false })
+      .limit(10);
+
+    // Hitung jumlah siswa absen hari ini dari laporan guru ini
+    const today = new Date().toISOString().split('T')[0];
+    const { count: siswaAbsenHariIni } = await window.supabase
+      .from('absensi_piket')
+      .select('id, laporan_piket!inner(guru_id, tanggal)', { count: 'exact', head: true })
+      .eq('laporan_piket.guru_id', guruId)
+      .eq('laporan_piket.tanggal', today);
+
+    window.Components.hideLoading();
+
+    const laporan = laporanList || [];
+
+    const riwayatHtml = laporan.length > 0
+      ? laporan.map(lap => {
+          const badgeStyle = lap.status === 'Selesai'
+            ? 'background: #e8f5e9; color: #2e7d32;'
+            : 'background: #fff3e0; color: #ef6c00;';
+          return `
+            <div class="card list-item" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px;">
+              <div>
+                <div style="font-weight: 500;">${lap.tanggal} — Sesi ${lap.sesi}</div>
+              </div>
+              <span class="badge" style="${badgeStyle} padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 500;">${lap.status}</span>
+            </div>
+          `;
+        }).join('')
+      : '<div class="empty-state" style="text-align:center; color:#999; padding: 24px;">Belum ada riwayat laporan</div>';
 
     const html = `
       <div class="page piket-dashboard">
@@ -12,20 +49,20 @@
             <div style="display: flex; align-items: center; gap: 1rem;">
               <span class="material-icons-outlined" style="font-size: 2.5rem;">assignment</span>
               <div>
-                <div style="font-size: 1.2rem; font-weight: bold;">Piket Aktif &mdash; Sesi Pagi</div>
-                <div style="opacity: 0.9; font-size: 0.9rem;">Anda bertugas sebagai guru piket hari ini</div>
+                <div style="font-size: 1.2rem; font-weight: bold;">Halaman Piket</div>
+                <div style="opacity: 0.9; font-size: 0.9rem;">Kelola laporan piket harian Anda</div>
               </div>
             </div>
           </div>
 
           <div class="stat-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
             <div class="card stat-card" style="text-align: center;">
-              <div class="stat-card-label" style="color: var(--text-secondary, #666); font-size: 0.85rem; margin-bottom: 0.5rem;">Siswa Tidak Hadir</div>
-              <div class="stat-card-value" style="color: var(--warning, #f39c12); font-size: 2rem; font-weight: bold;">5</div>
+              <div class="stat-card-label" style="color: var(--text-secondary, #666); font-size: 0.85rem; margin-bottom: 0.5rem;">Siswa Absen Hari Ini</div>
+              <div class="stat-card-value" style="color: var(--warning, #f39c12); font-size: 2rem; font-weight: bold;">${siswaAbsenHariIni || 0}</div>
             </div>
             <div class="card stat-card" style="text-align: center;">
-              <div class="stat-card-label" style="color: var(--text-secondary, #666); font-size: 0.85rem; margin-bottom: 0.5rem;">Guru Tidak Hadir</div>
-              <div class="stat-card-value" style="color: var(--error, #e74c3c); font-size: 2rem; font-weight: bold;">1</div>
+              <div class="stat-card-label" style="color: var(--text-secondary, #666); font-size: 0.85rem; margin-bottom: 0.5rem;">Total Laporan Saya</div>
+              <div class="stat-card-value" style="color: var(--primary, #1a73e8); font-size: 2rem; font-weight: bold;">${laporan.length}</div>
             </div>
           </div>
 
@@ -40,34 +77,9 @@
             </button>
           </div>
 
-          <div class="section-title" style="margin-bottom: 1rem; font-weight: bold;">Riwayat Laporan</div>
+          <div class="section-title" style="margin-bottom: 1rem; font-weight: bold;">Riwayat Laporan Saya</div>
           <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 2rem;">
-            ${laporanPiket.map(lap => `
-              <div class="card list-item" style="display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                  <div style="font-weight: 500;">${lap.tanggal} &mdash; Sesi ${lap.sesi}</div>
-                  <div style="font-size: 0.85rem; color: var(--text-secondary, #666);">Siswa Absen: ${lap.siswaAbsen}</div>
-                </div>
-                <div>
-                  <span class="badge ${lap.status === 'Selesai' ? 'badge-success' : 'badge-warning'}">${lap.status}</span>
-                </div>
-              </div>
-            `).join('') || '<div class="empty-state">Belum ada riwayat laporan</div>'}
-          </div>
-
-          <div class="section-title" style="margin-bottom: 1rem; font-weight: bold;">Rekap Mingguan</div>
-          <div class="card" style="margin-bottom: 2rem;">
-            <div class="bar-chart" style="display: flex; align-items: flex-end; gap: 0.5rem; height: 150px; padding-top: 1rem;">
-              ${weeklyData.map(data => {
-                const heightPercent = Math.max(10, Math.min(100, (data.value / 20) * 100)); // dummy scale
-                return `
-                <div class="bar-chart-item" style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%;">
-                  <div class="bar-chart-bar" style="width: 100%; background-color: var(--primary, #007bff); border-radius: 4px 4px 0 0; height: ${heightPercent}%; transition: height 0.3s;"></div>
-                  <div class="bar-chart-label" style="font-size: 0.75rem; margin-top: 0.5rem; color: var(--text-secondary, #666);">${data.hari.substring(0,3)}</div>
-                </div>
-                `;
-              }).join('')}
-            </div>
+            ${riwayatHtml}
           </div>
 
         </div>
@@ -81,17 +93,10 @@
 
   function bindEvents() {
     const btnBuat = document.getElementById('btnBuatLaporan');
-    if (btnBuat) {
-      btnBuat.addEventListener('click', () => {
-        window.Router.navigate('/guru/piket/laporan');
-      });
-    }
+    if (btnBuat) btnBuat.addEventListener('click', () => window.Router.navigate('/guru/piket/laporan'));
+
     const btnUnduh = document.getElementById('btnUnduhLaporan');
-    if (btnUnduh) {
-      btnUnduh.addEventListener('click', () => {
-        window.Router.navigate('/export');
-      });
-    }
+    if (btnUnduh) btnUnduh.addEventListener('click', () => window.Router.navigate('/export'));
   }
 
   window.Router.register('/guru/piket', render);

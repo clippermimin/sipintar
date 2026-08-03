@@ -11,7 +11,7 @@
         <div class="page-content">
           
           <div class="greeting-section" style="margin-bottom: 1.5rem;">
-            <h1 class="greeting-name" style="font-size: 1.5rem; font-weight: bold; font-family: 'Poppins', sans-serif;">Halo, ${guru.panggilan}!</h1>
+            <h1 class="greeting-name" style="font-size: 1.5rem; font-weight: bold; font-family: 'Poppins', sans-serif;">Halo, ${(guru.nama || 'Guru').split(' ')[0]}!</h1>
             <p class="greeting-subtitle" style="color: var(--text-secondary, #666);">${hariTanggal}<br/>Selamat pagi, semoga harimu menyenangkan.</p>
           </div>
 

@@ -36,7 +36,7 @@
             ${menuHtml}
           </div>
           <div style="padding: 16px 0; border-top: 1px solid #eee;">
-            <a href="javascript:void(0)" onclick="window.APP_STATE.role = null; window.APP_STATE.currentGuru = null; window.Router.navigate('/login')" class="admin-sidebar-item" style="color: #EA4335;">
+            <a href="javascript:void(0)" onclick="window.APP_DATA.logout()" class="admin-sidebar-item" style="color: #EA4335;">
               <span class="material-icons-outlined">logout</span>
               <span>Keluar</span>
             </a>
@@ -58,46 +58,41 @@
   }
   
   async function render() {
-    const filterChips = `
-      <div class="chip-group" style="display: flex; gap: 8px; margin-bottom: 24px;">
-        <div class="chip active" style="padding: 6px 16px; border-radius: 16px; background: #1a73e8; color: white; font-size: 14px; cursor: pointer;">Semua</div>
-        <div class="chip" style="padding: 6px 16px; border-radius: 16px; background: white; border: 1px solid #ddd; color: #666; font-size: 14px; cursor: pointer;">Hari Ini</div>
-        <div class="chip" style="padding: 6px 16px; border-radius: 16px; background: white; border: 1px solid #ddd; color: #666; font-size: 14px; cursor: pointer;">Minggu Ini</div>
-        <div class="chip" style="padding: 6px 16px; border-radius: 16px; background: white; border: 1px solid #ddd; color: #666; font-size: 14px; cursor: pointer;">Bulan Ini</div>
-      </div>
-    `;
+    window.Components.showLoading();
+    
+    // Fetch laporan real dari Supabase
+    const { data: laporans, error } = await window.supabase
+      .from('laporan_piket')
+      .select('id, tanggal, sesi, status, catatan, profiles!guru_id(nama)')
+      .order('created_at', { ascending: false });
 
-    const laporans = window.APP_DATA.laporanPiket || [];
-    const listHtmlArr = await Promise.all(laporans.map(async l => {
-      const guru = await window.APP_DATA.getGuruById(l.petugas);
-      const badgeHtml = l.status === 'Selesai' 
-        ? `<span class="badge" style="background: #e8f5e9; color: #2e7d32; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 500;">Selesai</span>`
-        : `<span class="badge" style="background: #fff3e0; color: #ef6c00; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 500;">Belum Selesai</span>`;
+    window.Components.hideLoading();
+    
+    if (error) {
+      window.Components.toast('Gagal memuat laporan', 'error');
+      return;
+    }
 
-      return `
-        <div class="card laporan-card" style="background: white; padding: 16px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 12px; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
-          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
-            <div>
-              <div style="font-weight: 500; font-size: 16px; color: #333;">${l.tanggal} • ${l.sesi}</div>
-              <div style="font-size: 13px; color: #666; margin-top: 4px;">Petugas: ${guru ? guru.nama : l.petugas}</div>
-              <div style="font-size: 13px; color: #666; margin-top: 2px;"><span class="material-icons-outlined" style="font-size: 14px; vertical-align: middle;">location_on</span> ${l.gedung}</div>
+    const listHtml = (laporans || []).length > 0
+      ? (laporans || []).map(l => {
+          const badgeHtml = l.status === 'Selesai' 
+            ? `<span class="badge" style="background: #e8f5e9; color: #2e7d32; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 500;">Selesai</span>`
+            : `<span class="badge" style="background: #fff3e0; color: #ef6c00; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 500;">Belum Selesai</span>`;
+
+          return `
+            <div class="card laporan-card" style="background: white; padding: 16px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 12px;">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                <div>
+                  <div style="font-weight: 500; font-size: 16px; color: #333;">${l.tanggal} &bull; Sesi ${l.sesi}</div>
+                  <div style="font-size: 13px; color: #666; margin-top: 4px;">Petugas: ${l.profiles?.nama || '-'}</div>
+                  ${l.catatan ? `<div style="font-size: 12px; color: #888; margin-top: 4px; font-style: italic;">${l.catatan.substring(0, 60)}${l.catatan.length > 60 ? '...' : ''}</div>` : ''}
+                </div>
+                ${badgeHtml}
+              </div>
             </div>
-            ${badgeHtml}
-          </div>
-          <div style="display: flex; gap: 16px; border-top: 1px solid #eee; padding-top: 12px;">
-            <div style="font-size: 13px; color: #555;">
-              <span class="material-icons-outlined" style="font-size: 16px; vertical-align: middle; color: #d32f2f;">person_off</span>
-              Siswa Absen: <strong>${l.siswaAbsen}</strong>
-            </div>
-            <div style="font-size: 13px; color: #555;">
-              <span class="material-icons-outlined" style="font-size: 16px; vertical-align: middle; color: #f57c00;">person_off</span>
-              Guru Absen: <strong>${l.guruAbsen}</strong>
-            </div>
-          </div>
-        </div>
-      `;
-    }));
-    const listHtml = listHtmlArr.join('');
+          `;
+        }).join('')
+      : '<p style="color:#666; text-align:center; padding: 32px 0;">Belum ada laporan masuk.</p>';
 
     const content = `
       <div style="margin-bottom: 24px;">
@@ -105,9 +100,13 @@
         <p style="margin: 0; color: #666;">Daftar laporan hasil piket harian</p>
       </div>
 
-      ${filterChips}
+      <div style="display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap;">
+        <button id="filterSemua" class="chip-btn active" style="padding: 6px 16px; border-radius: 16px; background: #1a73e8; color: white; border: none; font-size: 14px; cursor: pointer;">Semua</button>
+        <button id="filterHariIni" class="chip-btn" style="padding: 6px 16px; border-radius: 16px; background: white; border: 1px solid #ddd; color: #666; font-size: 14px; cursor: pointer;">Hari Ini</button>
+        <button id="filterMingguIni" class="chip-btn" style="padding: 6px 16px; border-radius: 16px; background: white; border: 1px solid #ddd; color: #666; font-size: 14px; cursor: pointer;">Minggu Ini</button>
+      </div>
 
-      <div style="display: flex; flex-direction: column; gap: 4px;">
+      <div id="laporanList" style="display: flex; flex-direction: column; gap: 4px;">
         ${listHtml}
       </div>
 
@@ -120,6 +119,8 @@
 
     const html = adminLayout('laporan', content);
     window.Components.renderPage(html);
+    // Store laporan data for filtering
+    window._laporanAll = laporans || [];
     setTimeout(bindEvents, 200);
   }
 
@@ -133,16 +134,50 @@
     if (btnCloseDrawer) btnCloseDrawer.addEventListener('click', () => { sidebar.classList.remove('open'); overlay.classList.add('hidden'); });
     if (overlay) overlay.addEventListener('click', () => { sidebar.classList.remove('open'); overlay.classList.add('hidden'); });
 
-    document.querySelectorAll('.laporan-card').forEach(card => {
-      card.addEventListener('click', () => {
-        window.Components.toast('Demo: Detail laporan', 'info');
-      });
-    });
+    // Filter chips
+    const today = new Date().toISOString().split('T')[0];
+    const mondayOffset = new Date().getDay() === 0 ? -6 : 1 - new Date().getDay();
+    const monday = new Date(Date.now() + mondayOffset * 86400000).toISOString().split('T')[0];
 
-    document.getElementById('btnExportLaporan').addEventListener('click', () => {
-      window.Components.toast('Mengarahkan ke halaman Export...', 'info');
-      setTimeout(() => window.Router.navigate('/export'), 1000);
+    const filterBtn = (id, filterFn) => {
+      const btn = document.getElementById(id);
+      if (!btn) return;
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.chip-btn').forEach(b => {
+          b.style.background = 'white'; b.style.color = '#666'; b.style.border = '1px solid #ddd';
+        });
+        btn.style.background = '#1a73e8'; btn.style.color = 'white'; btn.style.border = 'none';
+        const filtered = filterFn ? (window._laporanAll || []).filter(filterFn) : (window._laporanAll || []);
+        renderList(filtered);
+      });
+    };
+
+    filterBtn('filterSemua', null);
+    filterBtn('filterHariIni', l => l.tanggal === today);
+    filterBtn('filterMingguIni', l => l.tanggal >= monday);
+
+    document.getElementById('btnExportLaporan')?.addEventListener('click', () => {
+      window.Router.navigate('/export');
     });
+  }
+
+  function renderList(laporans) {
+    const el = document.getElementById('laporanList');
+    if (!el) return;
+    if (!laporans.length) { el.innerHTML = '<p style="color:#666;text-align:center;padding:32px 0;">Tidak ada laporan untuk filter ini.</p>'; return; }
+    el.innerHTML = laporans.map(l => {
+      const badgeHtml = l.status === 'Selesai' 
+        ? `<span class="badge" style="background:#e8f5e9;color:#2e7d32;padding:4px 8px;border-radius:4px;font-size:12px;font-weight:500;">Selesai</span>`
+        : `<span class="badge" style="background:#fff3e0;color:#ef6c00;padding:4px 8px;border-radius:4px;font-size:12px;font-weight:500;">Belum Selesai</span>`;
+      return `
+        <div class="card" style="background:white;padding:16px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div style="font-weight:500;font-size:16px;color:#333;">${l.tanggal} &bull; Sesi ${l.sesi}</div>
+            <div style="font-size:13px;color:#666;margin-top:4px;">Petugas: ${l.profiles?.nama || '-'}</div>
+          </div>
+          ${badgeHtml}
+        </div>`;
+    }).join('');
   }
 
   window.Router.register('/admin/laporan', render);

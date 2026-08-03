@@ -72,6 +72,29 @@ CREATE POLICY "Allow read for authenticated" ON absensi_piket FOR SELECT TO auth
 CREATE POLICY "Allow insert for authenticated" ON laporan_piket FOR INSERT TO authenticated WITH CHECK (true);
 CREATE POLICY "Allow insert for authenticated" ON absensi_piket FOR INSERT TO authenticated WITH CHECK (true);
 
+-- Allow admin to manage profiles (insert/update/delete)
+CREATE POLICY "Allow insert profiles for authenticated" ON profiles FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY "Allow update profiles for authenticated" ON profiles FOR UPDATE TO authenticated USING (true);
+CREATE POLICY "Allow delete profiles for authenticated" ON profiles FOR DELETE TO authenticated USING (true);
+
+-- Allow admin to manage kelas (insert/update/delete)
+CREATE POLICY "Allow insert kelas for authenticated" ON kelas FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY "Allow update kelas for authenticated" ON kelas FOR UPDATE TO authenticated USING (true);
+CREATE POLICY "Allow delete kelas for authenticated" ON kelas FOR DELETE TO authenticated USING (true);
+
+-- Allow admin to manage siswa (insert/update/delete)
+CREATE POLICY "Allow insert siswa for authenticated" ON siswa FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY "Allow update siswa for authenticated" ON siswa FOR UPDATE TO authenticated USING (true);
+CREATE POLICY "Allow delete siswa for authenticated" ON siswa FOR DELETE TO authenticated USING (true);
+
+-- =============================================================
+-- MIGRATION: Run this if upgrading from older schema
+-- =============================================================
+-- ALTER TABLE profiles ADD COLUMN IF NOT EXISTS nip TEXT UNIQUE;
+-- DROP COLUMN IF EXISTS mapel;
+-- DROP COLUMN IF EXISTS panggilan;
+
+
 -- Dummy Data Kelas
 INSERT INTO kelas (id, nama, jenjang, jurusan) VALUES
 ('x-ipa-1', 'X IPA 1', 'X', 'IPA'),
