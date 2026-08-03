@@ -56,9 +56,13 @@
                 <label class="form-label">Nama Lengkap</label>
                 <input type="text" id="guruNama" class="form-input" required>
               </div>
-              <div class="form-group mb-4">
+              <div class="form-group mb-3">
                 <label class="form-label">NIP (Nomor Induk Pegawai)</label>
                 <input type="text" id="guruNip" class="form-input" required pattern="[0-9]+" title="Hanya angka diperbolehkan">
+              </div>
+              <div class="form-group mb-4" id="formGroupPassword">
+                <label class="form-label">Password</label>
+                <input type="password" id="guruPassword" class="form-input" placeholder="Minimal 6 karakter" minlength="6">
               </div>
               <div style="display: flex; gap: 12px; justify-content: flex-end;">
                 <button type="button" id="btnBatal" class="btn btn-outline">Batal</button>
@@ -126,6 +130,8 @@
         document.getElementById('guruNama').value = e.target.dataset.nama;
         document.getElementById('guruNip').value = e.target.dataset.nip;
         document.getElementById('guruNip').disabled = true;
+        document.getElementById('formGroupPassword').style.display = 'none';
+        document.getElementById('guruPassword').required = false;
         document.getElementById('modalGuru').classList.remove('hidden');
       });
     });
@@ -197,6 +203,8 @@
       form.reset();
       document.getElementById('guruId').value = '';
       document.getElementById('guruNip').disabled = false;
+      document.getElementById('formGroupPassword').style.display = 'block';
+      document.getElementById('guruPassword').required = true;
       modal.classList.remove('hidden');
     });
 
@@ -212,6 +220,7 @@
         nama: document.getElementById('guruNama').value,
         nip: document.getElementById('guruNip').value,
       };
+      const pwdInput = document.getElementById('guruPassword').value;
 
       const submitBtn = form.querySelector('button[type="submit"]');
       const originalText = submitBtn.innerText;
@@ -224,7 +233,7 @@
         error = res.error;
       } else {
         try {
-          const pwd = data.nip.length >= 6 ? data.nip : data.nip + '123'; // Supabase requires 6 char min
+          const pwd = pwdInput.length >= 6 ? pwdInput : data.nip + '123';
           const response = await fetch(`${window.supabaseUrl}/auth/v1/signup`, {
             method: 'POST',
             headers: {
