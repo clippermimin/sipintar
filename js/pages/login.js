@@ -12,12 +12,12 @@
           <div class="login-card">
             <form id="login-form">
               <div class="form-group">
-                <label class="form-label">Email</label>
-                <input type="email" class="form-input" placeholder="Masukkan email anda" required>
+                <label class="form-label">NIP (Nomor Induk Pegawai)</label>
+                <input type="text" id="login-nip" class="form-input" placeholder="Masukkan NIP anda" required>
               </div>
               <div class="form-group mb-4">
                 <label class="form-label">Password</label>
-                <input type="password" class="form-input" placeholder="Masukkan password" required>
+                <input type="password" id="login-password" class="form-input" placeholder="Masukkan password (default: NIP)" required>
               </div>
               
               <button type="submit" class="btn btn-primary btn-full btn-lg">Masuk</button>
@@ -36,7 +36,7 @@
                 <span class="role-name">Admin</span>
               </div>
             </div>
-            <p style="font-size: 11px; text-align: center; color: #888; margin-top: 8px;">*Pastikan kamu sudah mendaftarkan email ini di Supabase Auth</p>
+            <p style="font-size: 11px; text-align: center; color: #888; margin-top: 8px;">*NIP admin akan di-append @sipintar.com di balik layar</p>
           </div>
           
           ${Components.footer()}
@@ -53,8 +53,9 @@
     Components.showLoading('Memverifikasi...');
     
     try {
-      const email = document.querySelector('#login-form input[type="email"]').value;
-      const password = document.querySelector('#login-form input[type="password"]').value;
+      const nip = document.getElementById('login-nip').value.trim();
+      const password = document.getElementById('login-password').value;
+      const email = `${nip}@sipintar.com`;
       
       const { error } = await window.supabase.auth.signInWithPassword({ email, password });
       
@@ -64,21 +65,26 @@
       Components.toast('Login berhasil, memuat profil...');
     } catch (error) {
       Components.hideLoading();
-      window.Components.toast(error.message, 'error');
+      let errMsg = error.message;
+      if (errMsg.includes('Invalid login credentials')) {
+        errMsg = 'NIP atau Password salah';
+      }
+      window.Components.toast(errMsg, 'error');
     }
   }
   
   function bindEvents() {
     document.getElementById('login-form').addEventListener('submit', handleLogin);
     
-    const setLogin = (email) => {
-      document.querySelector('#login-form input[type="email"]').value = email;
-      document.querySelector('#login-form input[type="password"]').value = 'password123';
+    const setLogin = (nip, password) => {
+      document.getElementById('login-nip').value = nip;
+      document.getElementById('login-password').value = password;
       document.getElementById('login-form').dispatchEvent(new Event('submit', { cancelable: true }));
     };
     
-    document.getElementById('role-guru').addEventListener('click', () => setLogin('budi@sipinter.id'));
-    document.getElementById('role-admin').addEventListener('click', () => setLogin('admin@sipinter.id'));
+    // Asumsikan NIP admin demo adalah 'admin123'
+    document.getElementById('role-guru').addEventListener('click', () => setLogin('123456', '123456'));
+    document.getElementById('role-admin').addEventListener('click', () => setLogin('admin123', 'admin123'));
   }
   
   Router.register('/login', render);

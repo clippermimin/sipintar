@@ -1,6 +1,9 @@
 const SUPABASE_URL = 'https://aneiasgayibrfqewtsol.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFuZWlhc2dheWlicmZxZXd0c29sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ5NjIwODUsImV4cCI6MjEwMDUzODA4NX0.xKuyrRhztpF0Me3PZdlgEoy3EtUuFfcS60WQ33mVqgM';
 
+window.supabaseUrl = SUPABASE_URL;
+window.supabaseKey = SUPABASE_KEY;
+
 // Initialize Supabase Client
 window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 // We override window.supabase to use the client directly to avoid confusion

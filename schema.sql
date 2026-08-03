@@ -5,8 +5,7 @@ CREATE TABLE profiles (
   id UUID REFERENCES auth.users(id) PRIMARY KEY,
   role TEXT NOT NULL CHECK (role IN ('guru', 'admin', 'kepsek')),
   nama TEXT NOT NULL,
-  mapel TEXT,
-  panggilan TEXT,
+  nip TEXT UNIQUE,
   avatar TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
 );

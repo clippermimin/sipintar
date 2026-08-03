@@ -56,13 +56,9 @@
                 <label class="form-label">Nama Lengkap</label>
                 <input type="text" id="guruNama" class="form-input" required>
               </div>
-              <div class="form-group mb-3">
-                <label class="form-label">Mata Pelajaran</label>
-                <input type="text" id="guruMapel" class="form-input" required>
-              </div>
               <div class="form-group mb-4">
-                <label class="form-label">Panggilan</label>
-                <input type="text" id="guruPanggilan" class="form-input" required>
+                <label class="form-label">NIP (Nomor Induk Pegawai)</label>
+                <input type="text" id="guruNip" class="form-input" required pattern="[0-9]+" title="Hanya angka diperbolehkan">
               </div>
               <div style="display: flex; gap: 12px; justify-content: flex-end;">
                 <button type="button" id="btnBatal" class="btn btn-outline">Batal</button>
@@ -109,9 +105,9 @@
         </div>
         <div style="flex: 1;">
           <div style="font-weight: 500; font-size: 16px; color: #333;">${g.nama}</div>
-          <div style="font-size: 13px; color: #666; margin-top: 4px;">${g.mapel || '-'}</div>
+          <div style="font-size: 13px; color: #666; margin-top: 4px;">NIP: ${g.nip || '-'}</div>
         </div>
-        <button class="btn btn-outline edit-btn" data-id="${g.id}" data-nama="${g.nama}" data-mapel="${g.mapel || ''}" data-panggilan="${g.panggilan || ''}" style="padding: 6px 12px; border: 1px solid #1a73e8; color: #1a73e8; border-radius: 6px; background: white; cursor: pointer;">Edit</button>
+        <button class="btn btn-outline edit-btn" data-id="${g.id}" data-nama="${g.nama}" data-nip="${g.nip || ''}" style="padding: 6px 12px; border: 1px solid #1a73e8; color: #1a73e8; border-radius: 6px; background: white; cursor: pointer;">Edit</button>
         <button class="btn btn-outline del-btn" data-id="${g.id}" style="padding: 6px 12px; border: 1px solid #ea4335; color: #ea4335; border-radius: 6px; background: white; cursor: pointer;">Hapus</button>
       </div>
     `).join('');
@@ -179,8 +175,9 @@
         document.getElementById('modalTitle').innerText = 'Edit Guru';
         document.getElementById('guruId').value = id;
         document.getElementById('guruNama').value = e.target.dataset.nama;
-        document.getElementById('guruMapel').value = e.target.dataset.mapel;
-        document.getElementById('guruPanggilan').value = e.target.dataset.panggilan;
+        document.getElementById('guruNip').value = e.target.dataset.nip;
+        // Jika edit, NIP di-disable agar tidak repot ubah email auth (opsional, tapi disarankan)
+        document.getElementById('guruNip').disabled = true;
         modal.classList.remove('hidden');
       });
     });
@@ -208,27 +205,55 @@
       const data = {
         role: 'guru',
         nama: document.getElementById('guruNama').value,
-        mapel: document.getElementById('guruMapel').value,
-        panggilan: document.getElementById('guruPanggilan').value,
+        nip: document.getElementById('guruNip').value,
       };
 
       window.Components.showLoading();
       
       let error;
       if (id) {
-        // Edit
-        const res = await window.supabase.from('profiles').update(data).eq('id', id);
+        // Edit (hanya nama, NIP tidak diubah karena terkait Auth Email)
+        const res = await window.supabase.from('profiles').update({ nama: data.nama }).eq('id', id);
         error = res.error;
       } else {
-        // Create - Since we use anon key, we cannot create auth users.
-        // For demo, we just insert into profiles with a generated UUID if auth user doesn't exist?
-        // Actually `profiles.id` is a UUID references auth.users(id). 
-        // We cannot insert directly if RLS or FK constraint prevents it. 
-        // Let's assume FK constraint allows it for this demo, or we need to generate UUID.
-        // Wait, if it references auth.users(id), it WILL fail if auth user is not created.
-        data.id = crypto.randomUUID(); 
-        const res = await window.supabase.from('profiles').insert([data]);
-        error = res.error;
+        // Create auth user without logging admin out
+        // Use a temporary client with persistSession: false
+        const supabaseUrl = 'YOUR_SUPABASE_URL_HERE'; // It's accessible via window.supabase.supabaseUrl ? No, we can get it from script tag if possible, or just use fetch?
+        // Actually, we can just use the global supabase client if we temporarily store the session and restore it, 
+        // OR better, create tempClient using window.supabase keys if they are exposed.
+        // Let's assume window.supabase.supabaseUrl exists or we have to use fetch to the API.
+        // A simpler hack: Since Supabase v2, signUp doesn't log you in IF you set email confirmation to true, 
+        // but if it's false, it does. 
+        // We will just do a standard API call via fetch to create the user, avoiding the client library's state modification.
+        
+        try {
+          const { data: { session } } = await window.supabase.auth.getSession();
+          if (!session) throw new Error('Tidak ada sesi admin aktif');
+
+          const response = await fetch(`${window.supabase.supabaseUrl}/auth/v1/signup`, {
+            method: 'POST',
+            headers: {
+              'apikey': window.supabase.supabaseKey,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              email: `${data.nip}@sipintar.com`,
+              password: data.nip
+            })
+          });
+
+          const authData = await response.json();
+          if (!response.ok) {
+            throw new Error(authData.msg || authData.message || 'Gagal mendaftarkan auth guru');
+          }
+
+          // Then insert profile
+          data.id = authData.id || authData.user.id;
+          const res = await window.supabase.from('profiles').insert([data]);
+          error = res.error;
+        } catch (err) {
+          error = err;
+        }
       }
       
       window.Components.hideLoading();
