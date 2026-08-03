@@ -5,7 +5,7 @@ window.APP_STATE = {
   presensiDone: true,  // demo: guru already did presensi
 };
 
-// Hash-based Router
+// History API Router
 window.Router = {
   routes: {},
   
@@ -14,7 +14,8 @@ window.Router = {
   },
   
   navigate(path) {
-    window.location.hash = '#' + path;
+    window.history.pushState({}, '', path);
+    this.handleRoute();
   },
   
   handleRoute() {
@@ -29,12 +30,18 @@ window.Router = {
   },
   
   getCurrentPath() {
-    const hash = window.location.hash.slice(1);
-    return hash || '/login';
+    // Graceful upgrade for old hash URLs
+    if (window.location.hash.startsWith('#/')) {
+      const newPath = window.location.hash.slice(1);
+      window.history.replaceState({}, '', newPath);
+      return newPath;
+    }
+    const path = window.location.pathname;
+    return path === '/' ? '/login' : path;
   },
   
   init() {
-    window.addEventListener('hashchange', () => this.handleRoute());
+    window.addEventListener('popstate', () => this.handleRoute());
     // Initial route
     this.handleRoute();
   }
