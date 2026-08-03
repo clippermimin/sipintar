@@ -230,10 +230,10 @@
           const { data: { session } } = await window.supabase.auth.getSession();
           if (!session) throw new Error('Tidak ada sesi admin aktif');
 
-          const response = await fetch(`${window.supabase.supabaseUrl}/auth/v1/signup`, {
+          const response = await fetch(`${window.supabaseUrl}/auth/v1/signup`, {
             method: 'POST',
             headers: {
-              'apikey': window.supabase.supabaseKey,
+              'apikey': window.supabaseKey,
               'Content-Type': 'application/json'
             },
             body: JSON.stringify({
@@ -259,8 +259,8 @@
       window.Components.hideLoading();
       if (error) {
         console.error(error);
-        // Supabase error usually happens here due to FK constraint to auth.users if not careful.
-        window.Components.toast('Gagal menyimpan (pastikan setup Auth/FK)', 'error');
+        const errorMsg = error.message || 'Pastikan setup Auth/FK';
+        window.Components.toast(`Gagal menyimpan: ${errorMsg}`, 'error');
       } else {
         window.Components.toast('Berhasil disimpan');
         modal.classList.add('hidden');
