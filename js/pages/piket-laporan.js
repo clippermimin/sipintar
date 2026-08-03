@@ -78,13 +78,6 @@
                   Tambah Kelas
                 </button>
 
-                <!-- Foto Bukti Piket -->
-                <div class="form-group mb-4 mt-4">
-                  <label class="form-label" style="font-weight: 600;">Foto Bukti Pelaksanaan Piket</label>
-                  <input type="file" id="foto-piket" accept="image/*" class="form-input" style="padding: 10px;">
-                  <small style="color: #666;">Max 5MB. Foto akan otomatis dihapus setelah 30 hari.</small>
-                </div>
-
                 <!-- Catatan -->
                 <div class="form-group mb-4 mt-4">
                   <label class="form-label" style="font-weight: 600;">Catatan Umum</label>
@@ -135,7 +128,7 @@
           <p style="font-size: 13px; color: var(--error); margin-bottom: 8px; font-weight: 500;">
             * Centang nama siswa yang TIDAK HADIR
           </p>
-          <div class="siswa-list" id="siswa-list-${blockId}" style="max-height: 200px; overflow-y: auto; border: 1px solid var(--border); border-radius: 4px; padding: 8px; background: #fafafa;">
+          <div class="siswa-list" id="siswa-list-${blockId}" style="max-height: 300px; overflow-y: auto; border: 1px solid var(--border); border-radius: 4px; padding: 8px; background: #fafafa;">
             <!-- Checkboxes will be injected here -->
           </div>
         </div>
@@ -166,10 +159,19 @@
       }
       
       list.innerHTML = siswa.map((nama, idx) => `
-        <label style="display: flex; align-items: center; padding: 8px 4px; border-bottom: 1px solid #eee; cursor: pointer;">
-          <input type="checkbox" class="absen-checkbox" data-nama="${nama}" data-kelas="${kelasId}" style="margin-right: 12px; transform: scale(1.2);">
-          <span style="font-size: 14px;">${nama}</span>
-        </label>
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 4px; border-bottom: 1px solid #eee;">
+          <label style="display: flex; align-items: center; cursor: pointer; flex: 1;">
+            <input type="checkbox" class="absen-checkbox" data-nama="${nama}" data-kelas="${kelasId}" data-idx="${idx}" style="margin-right: 12px; transform: scale(1.2);" onchange="document.getElementById('status-container-${blockId}-${idx}').style.display = this.checked ? 'block' : 'none'">
+            <span style="font-size: 14px;">${nama}</span>
+          </label>
+          <div id="status-container-${blockId}-${idx}" style="display: none;">
+            <select class="form-input absen-status" id="status-${blockId}-${idx}" style="padding: 4px; font-size: 12px; width: auto;">
+              <option value="Alpha">A (Alpha)</option>
+              <option value="Izin">I (Izin)</option>
+              <option value="Sakit">S (Sakit)</option>
+            </select>
+          </div>
+        </div>
       `).join('');
     });
   }
@@ -192,39 +194,22 @@
         return;
       }
       
-      const fileInput = document.getElementById('foto-piket');
-      const file = fileInput.files[0];
-      let foto_url = null;
-      
       const btnSimpan = document.getElementById('btn-simpan');
       btnSimpan.innerHTML = 'Menyimpan...';
       btnSimpan.disabled = true;
 
       try {
-        if (file) {
-          const fileExt = file.name.split('.').pop();
-          const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-          
-          window.Components.toast('Mengunggah foto...', 'info');
-          const { data: uploadData, error: uploadError } = await window.supabase.storage
-            .from('presensi')
-            .upload(`piket/${fileName}`, file);
-            
-          if (uploadError) {
-            console.error(uploadError);
-            throw new Error('Gagal mengunggah foto. Pastikan bucket "presensi" sudah dibuat.');
-          }
-          
-          const { data: publicUrlData } = window.supabase.storage.from('presensi').getPublicUrl(`piket/${fileName}`);
-          foto_url = publicUrlData.publicUrl;
-        }
-
         const checkboxes = document.querySelectorAll('.absen-checkbox:checked');
-        const absensi = Array.from(checkboxes).map(cb => ({
-          namaSiswa: cb.getAttribute('data-nama'),
-          kelas_id: cb.getAttribute('data-kelas'),
-          status: 'Tidak Hadir' // For simplicity in this demo form
-        }));
+        const absensi = Array.from(checkboxes).map(cb => {
+          const idx = cb.getAttribute('data-idx');
+          const blockId = cb.closest('.kelas-block').id;
+          const status = document.getElementById(`status-${blockId}-${idx}`).value;
+          return {
+            namaSiswa: cb.getAttribute('data-nama'),
+            kelas_id: cb.getAttribute('data-kelas'),
+            status: status
+          };
+        });
         
         const data = {
           sesi: document.querySelector('input[name="sesi"]:checked').value,
@@ -232,7 +217,7 @@
           petugas_1: p1,
           petugas_2: p2,
           absensi: absensi,
-          foto_url: foto_url,
+          foto_url: null,
           status: 'Selesai'
         };
         
