@@ -83,8 +83,9 @@
   
   let globalKelas = [];
 
-  async function render() {
-    window.Components.showLoading();
+  async function fetchAndRenderList() {
+    const container = document.getElementById('siswaListContainer');
+    if (!container) return;
     
     // Fetch kelas and siswa
     const { data: kelasList } = await window.supabase.from('kelas').select('*').order('nama');
@@ -93,7 +94,7 @@
     globalKelas = kelasList || [];
     const siswaArr = siswaList || [];
     
-    window.Components.hideLoading();
+    document.getElementById('siswaCountBadge').innerText = `${siswaArr.length} Siswa`;
 
     let contentHtmlArr = (kelasList || []).map(k => {
       const siswaInKelas = siswaArr.filter(s => s.kelas_id === k.id);
@@ -128,11 +129,46 @@
     let contentHtml = contentHtmlArr.join('');
     if (!contentHtml) contentHtml = '<p>Belum ada data siswa.</p>';
 
+    container.innerHTML = contentHtml;
+
+    // Update select options
+    const selectKelas = document.getElementById('siswaKelas');
+    if (selectKelas) {
+      selectKelas.innerHTML = globalKelas.map(k => `<option value="${k.id}">${k.nama}</option>`).join('');
+    }
+
+    // Rebind inner events
+    document.querySelectorAll('.edit-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        document.getElementById('modalTitle').innerText = 'Edit Siswa';
+        document.getElementById('siswaId').value = e.target.dataset.id;
+        document.getElementById('siswaNama').value = e.target.dataset.nama;
+        document.getElementById('siswaKelas').value = e.target.dataset.kelas;
+        document.getElementById('modalSiswa').classList.remove('hidden');
+      });
+    });
+    
+    document.querySelectorAll('.del-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        if(confirm('Yakin ingin menghapus siswa ini?')) {
+          const { error } = await window.supabase.from('siswa').delete().eq('id', e.target.dataset.id);
+          if (error) {
+            window.Components.toast('Gagal menghapus data', 'error');
+          } else {
+            window.Components.toast('Berhasil dihapus');
+            fetchAndRenderList();
+          }
+        }
+      });
+    });
+  }
+
+  async function render() {
     const content = `
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
         <div>
           <h1 style="margin: 0 0 8px 0; font-size: 24px; color: #333;">Kelola Siswa</h1>
-          <span class="badge badge-success" style="background: #e8f5e9; color: #2e7d32; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 500;">${siswaArr.length} Siswa</span>
+          <span id="siswaCountBadge" class="badge badge-success" style="background: #e8f5e9; color: #2e7d32; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 500;">... Siswa</span>
         </div>
       </div>
       
@@ -143,7 +179,9 @@
         </div>
       </div>
 
-      ${contentHtml}
+      <div id="siswaListContainer">
+        <p style="color:#666;">Memuat data siswa...</p>
+      </div>
 
       <button id="btnTambahSiswa" class="btn btn-primary" style="position: fixed; bottom: 24px; right: 24px; background: #1a73e8; color: white; border: none; padding: 12px 24px; border-radius: 24px; font-weight: 500; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(26,115,232,0.3); cursor: pointer; z-index: 90;">
         <span class="material-icons-outlined">add</span> Tambah Siswa
@@ -152,7 +190,10 @@
 
     const html = adminLayout('siswa', content);
     window.Components.renderPage(html);
-    setTimeout(bindEvents, 200);
+    setTimeout(() => {
+      bindEvents();
+      fetchAndRenderList();
+    }, 200);
   }
 
   function bindEvents() {
@@ -167,10 +208,6 @@
 
     const modal = document.getElementById('modalSiswa');
     const form = document.getElementById('formSiswa');
-    const selectKelas = document.getElementById('siswaKelas');
-    
-    // Populate Kelas options
-    selectKelas.innerHTML = globalKelas.map(k => `<option value="${k.id}">${k.nama}</option>`).join('');
 
     document.getElementById('btnTambahSiswa').addEventListener('click', () => {
       document.getElementById('modalTitle').innerText = 'Tambah Siswa';
@@ -183,32 +220,6 @@
       modal.classList.add('hidden');
     });
 
-    document.querySelectorAll('.edit-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        document.getElementById('modalTitle').innerText = 'Edit Siswa';
-        document.getElementById('siswaId').value = e.target.dataset.id;
-        document.getElementById('siswaNama').value = e.target.dataset.nama;
-        document.getElementById('siswaKelas').value = e.target.dataset.kelas;
-        modal.classList.remove('hidden');
-      });
-    });
-    
-    document.querySelectorAll('.del-btn').forEach(btn => {
-      btn.addEventListener('click', async (e) => {
-        if(confirm('Yakin ingin menghapus siswa ini?')) {
-          window.Components.showLoading();
-          const { error } = await window.supabase.from('siswa').delete().eq('id', e.target.dataset.id);
-          window.Components.hideLoading();
-          if (error) {
-            window.Components.toast('Gagal menghapus data', 'error');
-          } else {
-            window.Components.toast('Berhasil dihapus');
-            render();
-          }
-        }
-      });
-    });
-
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const id = document.getElementById('siswaId').value;
@@ -217,7 +228,11 @@
         kelas_id: document.getElementById('siswaKelas').value,
       };
 
-      window.Components.showLoading();
+      const submitBtn = form.querySelector('button[type="submit"]');
+      const originalText = submitBtn.innerText;
+      submitBtn.innerText = 'Menyimpan...';
+      submitBtn.disabled = true;
+
       let error;
       if (id) {
         const res = await window.supabase.from('siswa').update(data).eq('id', id);
@@ -227,13 +242,15 @@
         error = res.error;
       }
       
-      window.Components.hideLoading();
+      submitBtn.innerText = originalText;
+      submitBtn.disabled = false;
+
       if (error) {
         window.Components.toast('Gagal menyimpan', 'error');
       } else {
         window.Components.toast('Berhasil disimpan');
         modal.classList.add('hidden');
-        render();
+        fetchAndRenderList();
       }
     });
   }
