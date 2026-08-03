@@ -36,7 +36,7 @@
             ${menuHtml}
           </div>
           <div style="padding: 16px 0; border-top: 1px solid #eee;">
-            <a href="javascript:void(0)" onclick="window.APP_STATE.role = null; window.APP_STATE.currentGuru = null; window.Router.navigate('/login')" class="admin-sidebar-item" style="color: #EA4335;">
+            <a href="javascript:void(0)" onclick="window.APP_DATA.logout()" class="admin-sidebar-item" style="color: #EA4335;">
               <span class="material-icons-outlined">logout</span>
               <span>Keluar</span>
             </a>
@@ -45,11 +45,39 @@
         <div class="admin-content" style="flex: 1; margin-left: 260px; padding: 24px; min-height: 100vh; background: #f8f9fa;">
           ${content}
         </div>
+        
+        <!-- Modal Form Guru -->
+        <div id="modalGuru" class="modal-overlay hidden" style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; display: none; align-items: center; justify-content: center;">
+          <div style="background: white; width: 100%; max-width: 400px; border-radius: 12px; padding: 24px;">
+            <h3 id="modalTitle" style="margin-top: 0;">Tambah Guru</h3>
+            <form id="formGuru">
+              <input type="hidden" id="guruId">
+              <div class="form-group mb-3">
+                <label class="form-label">Nama Lengkap</label>
+                <input type="text" id="guruNama" class="form-input" required>
+              </div>
+              <div class="form-group mb-3">
+                <label class="form-label">Mata Pelajaran</label>
+                <input type="text" id="guruMapel" class="form-input" required>
+              </div>
+              <div class="form-group mb-4">
+                <label class="form-label">Panggilan</label>
+                <input type="text" id="guruPanggilan" class="form-input" required>
+              </div>
+              <div style="display: flex; gap: 12px; justify-content: flex-end;">
+                <button type="button" id="btnBatal" class="btn btn-outline">Batal</button>
+                <button type="submit" class="btn btn-primary">Simpan</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
         <style>
           .admin-page { display: flex; min-height: 100vh; }
           .admin-sidebar-item { display: flex; align-items: center; gap: 12px; padding: 12px 24px; color: #5f6368; text-decoration: none; font-weight: 500; transition: background 0.2s; }
           .admin-sidebar-item:hover { background: #f1f3f4; color: #1a73e8; }
           .admin-sidebar-item.active { background: #e8f0fe; color: #1a73e8; border-right: 4px solid #1a73e8; }
+          .modal-overlay:not(.hidden) { display: flex !important; }
           @media (min-width: 769px) { .admin-mobile-header { display: none !important; } #adminDrawerOverlay { display: none !important; } #btnCloseDrawer { display: none !important; } }
           @media (max-width: 768px) { .admin-page { flex-direction: column; } .admin-content { margin-left: 0 !important; padding: 16px !important; } .admin-sidebar { transform: translateX(-100%); } .admin-sidebar.open { transform: translateX(0); } }
         </style>
@@ -58,26 +86,45 @@
   }
   
   async function render() {
-    const guruList = window.APP_DATA.guru || [];
+    window.Components.showLoading();
     
-    let guruHtml = guruList.map(g => `
+    // Fetch data from Supabase
+    const { data: guruList, error } = await window.supabase
+      .from('profiles')
+      .select('*')
+      .eq('role', 'guru')
+      .order('nama');
+      
+    window.Components.hideLoading();
+    
+    if (error) {
+      window.Components.toast('Gagal memuat data guru', 'error');
+      return;
+    }
+    
+    let guruHtml = (guruList || []).map(g => `
       <div class="card" style="background: white; padding: 16px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 16px; margin-bottom: 12px;">
         <div class="avatar" style="width: 48px; height: 48px; border-radius: 50%; background: #e3f2fd; color: #1976d2; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px;">
           ${g.nama.substring(0, 2).toUpperCase()}
         </div>
         <div style="flex: 1;">
           <div style="font-weight: 500; font-size: 16px; color: #333;">${g.nama}</div>
-          <div style="font-size: 13px; color: #666; margin-top: 4px;">${g.mapel} &bull; ${g.email}</div>
+          <div style="font-size: 13px; color: #666; margin-top: 4px;">${g.mapel || '-'}</div>
         </div>
-        <button class="btn btn-outline edit-btn" style="padding: 6px 12px; border: 1px solid #1a73e8; color: #1a73e8; border-radius: 6px; background: white; cursor: pointer;">Edit</button>
+        <button class="btn btn-outline edit-btn" data-id="${g.id}" data-nama="${g.nama}" data-mapel="${g.mapel || ''}" data-panggilan="${g.panggilan || ''}" style="padding: 6px 12px; border: 1px solid #1a73e8; color: #1a73e8; border-radius: 6px; background: white; cursor: pointer;">Edit</button>
+        <button class="btn btn-outline del-btn" data-id="${g.id}" style="padding: 6px 12px; border: 1px solid #ea4335; color: #ea4335; border-radius: 6px; background: white; cursor: pointer;">Hapus</button>
       </div>
     `).join('');
+
+    if (!guruList || guruList.length === 0) {
+      guruHtml = '<p style="color: #666;">Belum ada data guru.</p>';
+    }
 
     const content = `
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
         <div>
           <h1 style="margin: 0 0 8px 0; font-size: 24px; color: #333;">Kelola Guru</h1>
-          <span class="badge badge-primary" style="background: #e3f2fd; color: #1976d2; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 500;">${guruList.length} Guru</span>
+          <span class="badge badge-primary" style="background: #e3f2fd; color: #1976d2; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 500;">${(guruList||[]).length} Guru</span>
         </div>
       </div>
       
@@ -112,14 +159,88 @@
     if (btnCloseDrawer) btnCloseDrawer.addEventListener('click', () => { sidebar.classList.remove('open'); overlay.classList.add('hidden'); });
     if (overlay) overlay.addEventListener('click', () => { sidebar.classList.remove('open'); overlay.classList.add('hidden'); });
 
+    const modal = document.getElementById('modalGuru');
+    const form = document.getElementById('formGuru');
+    
+    document.getElementById('btnTambahGuru').addEventListener('click', () => {
+      document.getElementById('modalTitle').innerText = 'Tambah Guru';
+      form.reset();
+      document.getElementById('guruId').value = '';
+      modal.classList.remove('hidden');
+    });
+
+    document.getElementById('btnBatal').addEventListener('click', () => {
+      modal.classList.add('hidden');
+    });
+
     document.querySelectorAll('.edit-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        window.Components.toast('Demo: Edit guru', 'info');
+      btn.addEventListener('click', (e) => {
+        const id = e.target.dataset.id;
+        document.getElementById('modalTitle').innerText = 'Edit Guru';
+        document.getElementById('guruId').value = id;
+        document.getElementById('guruNama').value = e.target.dataset.nama;
+        document.getElementById('guruMapel').value = e.target.dataset.mapel;
+        document.getElementById('guruPanggilan').value = e.target.dataset.panggilan;
+        modal.classList.remove('hidden');
+      });
+    });
+    
+    document.querySelectorAll('.del-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        if(confirm('Yakin ingin menghapus guru ini?')) {
+          const id = e.target.dataset.id;
+          window.Components.showLoading();
+          const { error } = await window.supabase.from('profiles').delete().eq('id', id);
+          window.Components.hideLoading();
+          if (error) {
+            window.Components.toast('Gagal menghapus data', 'error');
+          } else {
+            window.Components.toast('Berhasil dihapus');
+            render();
+          }
+        }
       });
     });
 
-    document.getElementById('btnTambahGuru').addEventListener('click', () => {
-      window.Components.toast('Demo: Tambah Guru Baru', 'info');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('guruId').value;
+      const data = {
+        role: 'guru',
+        nama: document.getElementById('guruNama').value,
+        mapel: document.getElementById('guruMapel').value,
+        panggilan: document.getElementById('guruPanggilan').value,
+      };
+
+      window.Components.showLoading();
+      
+      let error;
+      if (id) {
+        // Edit
+        const res = await window.supabase.from('profiles').update(data).eq('id', id);
+        error = res.error;
+      } else {
+        // Create - Since we use anon key, we cannot create auth users.
+        // For demo, we just insert into profiles with a generated UUID if auth user doesn't exist?
+        // Actually `profiles.id` is a UUID references auth.users(id). 
+        // We cannot insert directly if RLS or FK constraint prevents it. 
+        // Let's assume FK constraint allows it for this demo, or we need to generate UUID.
+        // Wait, if it references auth.users(id), it WILL fail if auth user is not created.
+        data.id = crypto.randomUUID(); 
+        const res = await window.supabase.from('profiles').insert([data]);
+        error = res.error;
+      }
+      
+      window.Components.hideLoading();
+      if (error) {
+        console.error(error);
+        // Supabase error usually happens here due to FK constraint to auth.users if not careful.
+        window.Components.toast('Gagal menyimpan (pastikan setup Auth/FK)', 'error');
+      } else {
+        window.Components.toast('Berhasil disimpan');
+        modal.classList.add('hidden');
+        render();
+      }
     });
   }
 

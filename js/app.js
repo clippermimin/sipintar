@@ -41,7 +41,15 @@ window.Router = {
 };
 
 // Initialize when DOM is ready
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('DOMContentLoaded', async () => {
+  try {
+    if (window.checkAuth) {
+      await window.checkAuth();
+    }
+  } catch (err) {
+    console.error("Auth check failed:", err);
+  }
+
   // Hide initial loading
   const initialLoading = document.getElementById('initial-loading');
   if (initialLoading) {

@@ -13,8 +13,9 @@
     
     const hariTanggal = await window.APP_DATA.getHariTanggal();
     kelasList = await window.APP_DATA.getAllKelas();
-    // Assuming dummyGuru array is accessible for demo purposes, if not we can fetch profiles.
-    allGuru = window.APP_DATA.dummyGuru ? window.APP_DATA.dummyGuru.filter(g => g.role === 'guru' || g.role === 'admin') : [];
+    
+    const { data: guruData } = await window.supabase.from('profiles').select('*').in('role', ['guru', 'admin']).order('nama');
+    allGuru = guruData || [];
 
     const html = `
       ${headerHtml}
@@ -77,6 +78,13 @@
                   Tambah Kelas
                 </button>
 
+                <!-- Foto Bukti Piket -->
+                <div class="form-group mb-4 mt-4">
+                  <label class="form-label" style="font-weight: 600;">Foto Bukti Pelaksanaan Piket</label>
+                  <input type="file" id="foto-piket" accept="image/*" class="form-input" style="padding: 10px;">
+                  <small style="color: #666;">Max 5MB. Foto akan otomatis dihapus setelah 30 hari.</small>
+                </div>
+
                 <!-- Catatan -->
                 <div class="form-group mb-4 mt-4">
                   <label class="form-label" style="font-weight: 600;">Catatan Umum</label>
@@ -136,14 +144,12 @@
     
     document.getElementById('kelas-blocks-container').insertAdjacentHTML('beforeend', blockHtml);
     
-    // Bind remove button for this specific block
     if (blockCounter > 1) {
       document.querySelector(`#${blockId} .btn-remove-block`).addEventListener('click', function() {
         document.getElementById(blockId).remove();
       });
     }
     
-    // Bind dropdown change
     document.querySelector(`#${blockId} .select-kelas-dinamis`).addEventListener('change', async function(e) {
       const kelasId = e.target.value;
       const container = document.getElementById(`siswa-container-${blockId}`);
@@ -186,25 +192,47 @@
         return;
       }
       
-      // Collect absensi
-      const checkboxes = document.querySelectorAll('.absen-checkbox:checked');
-      const absensi = Array.from(checkboxes).map(cb => ({
-        namaSiswa: cb.getAttribute('data-nama'),
-        kelas_id: cb.getAttribute('data-kelas'),
-        status: 'Tidak Hadir'
-      }));
+      const fileInput = document.getElementById('foto-piket');
+      const file = fileInput.files[0];
+      let foto_url = null;
       
       const btnSimpan = document.getElementById('btn-simpan');
       btnSimpan.innerHTML = 'Menyimpan...';
       btnSimpan.disabled = true;
-      
+
       try {
+        if (file) {
+          const fileExt = file.name.split('.').pop();
+          const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+          
+          window.Components.toast('Mengunggah foto...', 'info');
+          const { data: uploadData, error: uploadError } = await window.supabase.storage
+            .from('presensi')
+            .upload(`piket/${fileName}`, file);
+            
+          if (uploadError) {
+            console.error(uploadError);
+            throw new Error('Gagal mengunggah foto. Pastikan bucket "presensi" sudah dibuat.');
+          }
+          
+          const { data: publicUrlData } = window.supabase.storage.from('presensi').getPublicUrl(`piket/${fileName}`);
+          foto_url = publicUrlData.publicUrl;
+        }
+
+        const checkboxes = document.querySelectorAll('.absen-checkbox:checked');
+        const absensi = Array.from(checkboxes).map(cb => ({
+          namaSiswa: cb.getAttribute('data-nama'),
+          kelas_id: cb.getAttribute('data-kelas'),
+          status: 'Tidak Hadir' // For simplicity in this demo form
+        }));
+        
         const data = {
           sesi: document.querySelector('input[name="sesi"]:checked').value,
           catatan: document.getElementById('catatan').value,
           petugas_1: p1,
           petugas_2: p2,
           absensi: absensi,
+          foto_url: foto_url,
           status: 'Selesai'
         };
         
@@ -215,7 +243,8 @@
           window.Router.navigate('/guru/dashboard');
         }, 1500);
       } catch (error) {
-        window.Components.toast('Gagal menyimpan laporan', 'error');
+        console.error(error);
+        window.Components.toast(error.message || 'Gagal menyimpan laporan', 'error');
         btnSimpan.innerHTML = 'Simpan Laporan';
         btnSimpan.disabled = false;
       }

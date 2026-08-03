@@ -3,28 +3,6 @@ window.APP_DATA = {
   jurusan: ['IPA', 'IPS', 'Perhotelan', 'TKJ'],
   jenjang: ['X', 'XI', 'XII'],
   
-  // Dummy Fallbacks for Demo
-  dummyGuru: [
-    { id: 'd-guru-1', nama: 'Budi Santoso, S.Pd', mapel: 'Matematika', panggilan: 'Pak Budi', role: 'guru', avatar: 'BS' },
-    { id: 'd-guru-2', nama: 'Siti Aminah, M.Pd', mapel: 'Biologi', panggilan: 'Bu Siti', role: 'guru', avatar: 'SA' },
-    { id: 'd-guru-3', nama: 'Agus Prasetyo, S.Pd', mapel: 'Fisika', panggilan: 'Pak Agus', role: 'guru', avatar: 'AP' },
-    { id: 'd-admin-1', nama: 'Tata Usaha', mapel: '-', panggilan: 'Admin', role: 'admin', avatar: 'AD' }
-  ],
-  dummyKelas: [
-    { id: 'x-ipa-1', nama: 'X IPA 1', jenjang: 'X', jurusan: 'IPA' },
-    { id: 'x-ips-1', nama: 'X IPS 1', jenjang: 'X', jurusan: 'IPS' },
-    { id: 'x-pht-1', nama: 'X PHT 1', jenjang: 'X', jurusan: 'Perhotelan' },
-    { id: 'xi-ipa-1', nama: 'XI IPA 1', jenjang: 'XI', jurusan: 'IPA' },
-    { id: 'xii-tkj-1', nama: 'XII TKJ 1', jenjang: 'XII', jurusan: 'TKJ' },
-  ],
-  dummySiswa: [
-    'Ahmad Fauzi', 'Budi Santoso', 'Citra Kirana', 'Dewi Lestari', 'Eko Prasetyo', 'Fajar Ramadhan', 'Gita Gutawa', 'Hadi Sucipto'
-  ],
-  dummyLaporan: [
-    { id: 'lap-1', tanggal: new Date().toISOString().split('T')[0], sesi: 'Pagi', status: 'Selesai', petugas_nama: 'Budi Santoso, S.Pd', siswaAbsen: 2 },
-    { id: 'lap-2', tanggal: new Date(Date.now() - 86400000).toISOString().split('T')[0], sesi: 'Siang', status: 'Selesai', petugas_nama: 'Siti Aminah, M.Pd', siswaAbsen: 0 },
-  ],
-  
   // Auth
   async login(email, password) {
     const { data, error } = await window.supabase.auth.signInWithPassword({ email, password });
@@ -45,13 +23,12 @@ window.APP_DATA = {
     await window.supabase.auth.signOut();
   },
 
-  // Helper methods now async
   async getGuruById(id) {
-    if (!id || id.startsWith('d-')) return this.dummyGuru.find(g => g.id === id) || this.dummyGuru[0];
+    if (!id) return null;
     const { data, error } = await window.supabase.from('profiles').select('*').eq('id', id).single();
     if (error || !data) {
       console.error(error);
-      return this.dummyGuru[0];
+      return null;
     }
     return data;
   },
@@ -62,24 +39,29 @@ window.APP_DATA = {
     if (jurusan) query = query.eq('jurusan', jurusan);
     
     const { data, error } = await query;
-    if (error || !data || data.length === 0) {
-      return this.dummyKelas.filter(k => (!jenjang || k.jenjang === jenjang) && (!jurusan || k.jurusan === jurusan));
+    if (error) {
+      console.error(error);
+      return [];
     }
-    return data;
+    return data || [];
   },
   
   async getAllKelas() {
     const { data, error } = await window.supabase.from('kelas').select('*');
-    if (error || !data || data.length === 0) {
-      return this.dummyKelas;
+    if (error) {
+      console.error(error);
+      return [];
     }
-    return data;
+    return data || [];
   },
   
   async getSiswaByKelas(kelasId) {
     const { data, error } = await window.supabase.from('siswa').select('nama').eq('kelas_id', kelasId);
-    if (error || !data || data.length === 0) return this.dummySiswa;
-    return data.map(s => s.nama);
+    if (error) {
+      console.error(error);
+      return [];
+    }
+    return (data || []).map(s => s.nama);
   },
   
   getHariIni() {
@@ -106,7 +88,7 @@ window.APP_DATA = {
       .eq('guru_id', guruId)
       .single();
       
-    if (error || !data) return true; // Demo fallback: Always true so client can see the Piket tab
+    if (error || !data) return false;
     return true;
   },
   
@@ -117,35 +99,31 @@ window.APP_DATA = {
       .select('guru_id, profiles(*)')
       .eq('hari', hari);
       
-    if (error || !data || data.length === 0) {
-      // Return current guru + one dummy
-      const cg = window.APP_STATE.currentGuru;
-      return [cg, this.dummyGuru[1]].filter(Boolean);
+    if (error || !data) {
+      console.error(error);
+      return [];
     }
-    return data.map(d => d.profiles);
+    return data.map(d => d.profiles).filter(Boolean);
   },
   
   async getGuruAbsenHariIni() {
-    // Dummy async fallback (can be implemented later)
-    return [
-      { guru: { nama: 'Siti Aminah, M.Pd' }, alasan: 'Sakit - Biologi Kls 11', pengganti: 'Diganti: A. Rani' },
-      { guru: { nama: 'Agus Prasetyo, S.Pd' }, alasan: 'Izin - Matematika Kls 12', pengganti: null },
-    ];
+    // To be implemented fully later, for now return empty
+    return [];
   },
   
   async getWeeklyData() {
-    // Dummy async fallback for charts
+    // To be implemented from actual laporan_piket data
     return [
-      { hari: 'Sen', value: 95 },
-      { hari: 'Sel', value: 88 },
-      { hari: 'Rab', value: 92 },
-      { hari: 'Kam', value: 97 },
-      { hari: 'Jum', value: 85 },
+      { hari: 'Sen', value: 0 },
+      { hari: 'Sel', value: 0 },
+      { hari: 'Rab', value: 0 },
+      { hari: 'Kam', value: 0 },
+      { hari: 'Jum', value: 0 },
     ];
   },
   
   async submitLaporanPiket(laporanData) {
-    // laporanData = { sesi, catatan, petugas_1, petugas_2, absensi: [{namaSiswa, kelas_id, status}] }
+    // laporanData = { sesi, catatan, petugas_1, petugas_2, absensi: [{namaSiswa, kelas_id, status}], foto_url: '...' }
     
     // 1. Insert Laporan
     const { data: laporan, error: lapErr } = await window.supabase
@@ -153,23 +131,25 @@ window.APP_DATA = {
       .insert({
         tanggal: new Date().toISOString().split('T')[0],
         sesi: laporanData.sesi,
-        guru_id: laporanData.petugas_1, // Using petugas_1 as main guru_id for backward compatibility
+        guru_id: laporanData.petugas_1,
         catatan: `[Petugas 1: ${laporanData.petugas_1}, Petugas 2: ${laporanData.petugas_2}] ` + laporanData.catatan,
-        status: laporanData.status || 'Selesai'
+        status: laporanData.status || 'Selesai',
+        foto_url: laporanData.foto_url || null
       })
       .select()
       .single();
       
     if (lapErr) {
-      console.warn("Real supabase failed, using dummy submit");
-      return { id: 'dummy-lap', ...laporanData };
+      console.error("Failed to submit laporan", lapErr);
+      throw lapErr;
     }
     
     // 2. Insert Absensi Siswa
     if (laporanData.absensi && laporanData.absensi.length > 0) {
-      // First, get the siswa IDs based on names (simplified for this prototype, usually we pass IDs directly)
       const names = laporanData.absensi.map(a => a.namaSiswa);
-      const { data: siswaData } = await window.supabase.from('siswa').select('id, nama').in('nama', names);
+      const { data: siswaData, error: siswaErr } = await window.supabase.from('siswa').select('id, nama').in('nama', names);
+      
+      if (siswaErr) console.error("Error fetching siswa IDs", siswaErr);
       
       const absensiInserts = laporanData.absensi.map(ab => {
         const s = siswaData?.find(sd => sd.nama === ab.namaSiswa);
@@ -181,7 +161,8 @@ window.APP_DATA = {
       }).filter(a => a.siswa_id !== null);
       
       if (absensiInserts.length > 0) {
-        await window.supabase.from('absensi_piket').insert(absensiInserts);
+        const { error: absErr } = await window.supabase.from('absensi_piket').insert(absensiInserts);
+        if (absErr) console.error("Failed to insert absensi", absErr);
       }
     }
     
@@ -189,7 +170,7 @@ window.APP_DATA = {
   },
   
   async submitIzinGuru(izinData) {
-    // dummy submit for izin
+    // dummy submit for izin (future feature)
     return new Promise(resolve => {
       setTimeout(() => {
         resolve({ id: 'izin-' + Date.now(), status: 'Menunggu Konfirmasi', ...izinData });
@@ -203,29 +184,26 @@ window.APP_DATA = {
       .select('id, tanggal, sesi, status, profiles(nama)')
       .order('created_at', { ascending: false });
       
-    if (error || !data || data.length === 0) return this.dummyLaporan;
+    if (error) {
+      console.error(error);
+      return [];
+    }
     
     return data.map(d => ({
       id: d.id,
       tanggal: d.tanggal,
       sesi: d.sesi,
-      petugas_nama: d.profiles?.nama,
-      siswaAbsen: 0, // calculate later
+      petugas_nama: d.profiles?.nama || 'Unknown',
+      siswaAbsen: 0, // Should be calculated with a join to absensi_piket
       status: d.status
     }));
   },
   
   async getRiwayatExport() {
-    return [
-      { nama: 'Rekap_Kehadiran_Okt23.xlsx', waktu: 'Hari ini, 09:41', size: '2.4 MB' },
-      { nama: 'Detail_Absen_Kelas_X.xlsx', waktu: 'Kemarin, 14:20', size: '1.1 MB' },
-    ];
+    return [];
   },
   
   async getAktivitasGuru() {
-    return [
-      { icon: 'login', title: 'Absensi Masuk Berhasil', subtitle: 'Melalui Pemindai Wajah', time: '06:45', color: 'success' },
-      { icon: 'update', title: 'Jadwal Diperbarui', subtitle: 'Admin mengubah jadwal mengajar Anda.', time: 'Kemarin', color: 'primary' },
-    ];
+    return [];
   }
 };

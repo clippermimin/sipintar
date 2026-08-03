@@ -13,29 +13,15 @@
             <form id="login-form">
               <div class="form-group">
                 <label class="form-label">Email</label>
-                <input type="email" class="form-input" placeholder="Masukkan email anda" value="budi@sipinter.id" required>
+                <input type="email" class="form-input" placeholder="Masukkan email anda" required>
               </div>
               <div class="form-group mb-4">
                 <label class="form-label">Password</label>
-                <input type="password" class="form-input" placeholder="Masukkan password" value="password123" required>
+                <input type="password" class="form-input" placeholder="Masukkan password" required>
               </div>
               
               <button type="submit" class="btn btn-primary btn-full btn-lg">Masuk</button>
             </form>
-          </div>
-          
-          <div class="login-demo-roles">
-            <p class="demo-title">Login Cepat (Demo):</p>
-            <div class="demo-roles">
-              <div class="demo-role-card" id="role-guru">
-                <span class="role-emoji">👨‍🏫</span>
-                <span class="role-name">Guru/Piket</span>
-              </div>
-              <div class="demo-role-card" id="role-admin">
-                <span class="role-emoji">👨‍💼</span>
-                <span class="role-name">Admin</span>
-              </div>
-            </div>
           </div>
           
           ${Components.footer()}
@@ -55,20 +41,12 @@
       const email = document.querySelector('#login-form input[type="email"]').value;
       const password = document.querySelector('#login-form input[type="password"]').value;
       
-      const profile = await window.APP_DATA.login(email, password);
+      const { error } = await window.supabase.auth.signInWithPassword({ email, password });
       
-      Components.hideLoading();
+      if (error) throw error;
       
-      window.APP_STATE.role = profile.role;
-      window.APP_STATE.currentGuru = profile;
-      
-      if (profile.role === 'guru') {
-        Router.navigate('/guru/dashboard');
-      } else if (profile.role === 'admin') {
-        Router.navigate('/admin/dashboard');
-      }
-      
-      Components.toast(`Berhasil masuk sebagai ${profile.role}`);
+      // On success, the onAuthStateChange in supabase.js will handle profile loading and redirect
+      Components.toast('Login berhasil, memuat profil...');
     } catch (error) {
       Components.hideLoading();
       window.Components.toast(error.message, 'error');
@@ -77,15 +55,6 @@
   
   function bindEvents() {
     document.getElementById('login-form').addEventListener('submit', handleLogin);
-    
-    const setLogin = (email) => {
-      document.querySelector('#login-form input[type="email"]').value = email;
-      document.querySelector('#login-form input[type="password"]').value = 'password123';
-      document.getElementById('login-form').dispatchEvent(new Event('submit', { cancelable: true }));
-    };
-    
-    document.getElementById('role-guru').addEventListener('click', () => setLogin('budi@sipinter.id'));
-    document.getElementById('role-admin').addEventListener('click', () => setLogin('admin@sipinter.id'));
   }
   
   Router.register('/login', render);
