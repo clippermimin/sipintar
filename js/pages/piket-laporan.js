@@ -118,7 +118,6 @@
         <div style="display: flex; justify-content: flex-end; margin-bottom: 8px;">
           <button type="button" class="btn-remove-block" data-target="${blockId}" style="background:none; border:none; color: var(--error); cursor:pointer;"><span class="material-icons-outlined">delete</span></button>
         </div>` : ''}
-        </div>
         
         <select class="form-input select-kelas-dinamis" data-block="${blockId}" required>
           <option value="" disabled selected>-- Pilih Kelas --</option>
