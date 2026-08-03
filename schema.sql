@@ -68,9 +68,14 @@ CREATE POLICY "Allow read for authenticated" ON jadwal_piket FOR SELECT TO authe
 CREATE POLICY "Allow read for authenticated" ON laporan_piket FOR SELECT TO authenticated USING (true);
 CREATE POLICY "Allow read for authenticated" ON absensi_piket FOR SELECT TO authenticated USING (true);
 
--- Allow insert/update for piket reports
+-- Allow insert/update/delete for piket reports
 CREATE POLICY "Allow insert for authenticated" ON laporan_piket FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY "Allow update for authenticated" ON laporan_piket FOR UPDATE TO authenticated USING (true);
+CREATE POLICY "Allow delete for authenticated" ON laporan_piket FOR DELETE TO authenticated USING (true);
+
 CREATE POLICY "Allow insert for authenticated" ON absensi_piket FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY "Allow update for authenticated" ON absensi_piket FOR UPDATE TO authenticated USING (true);
+CREATE POLICY "Allow delete for authenticated" ON absensi_piket FOR DELETE TO authenticated USING (true);
 
 -- Allow admin to manage profiles (insert/update/delete)
 CREATE POLICY "Allow insert profiles for authenticated" ON profiles FOR INSERT TO authenticated WITH CHECK (true);
