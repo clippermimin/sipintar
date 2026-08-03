@@ -190,12 +190,112 @@
     });
 
     // Download button action
-    btnDownload.addEventListener('click', () => {
+    btnDownload.addEventListener('click', async () => {
       window.Components.showLoading('Menyiapkan file...');
-      setTimeout(() => {
+      
+      try {
+        // Determine date range
+        let startDate = null;
+        let endDate = null;
+        
+        const activeTimeChip = document.querySelector('.time-chips .chip.active');
+        if (activeTimeChip.id === 'chipKustom') {
+          const inputs = document.querySelectorAll('#kustomDateInputs input');
+          startDate = inputs[0].value;
+          endDate = inputs[1].value;
+          
+          if (!startDate || !endDate) {
+            throw new Error('Pilih tanggal awal dan akhir untuk mode kustom.');
+          }
+        } else if (activeTimeChip.textContent === 'Bulan Ini') {
+          const now = new Date();
+          startDate = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+          endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+        } else if (activeTimeChip.textContent === 'Bulan Lalu') {
+          const now = new Date();
+          startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString().split('T')[0];
+          endDate = new Date(now.getFullYear(), now.getMonth(), 0).toISOString().split('T')[0];
+        }
+
+        // Fetch data
+        const data = await window.APP_DATA.getExportData(startDate, endDate);
+        
+        if (!data || data.length === 0) {
+          throw new Error('Tidak ada data pada rentang waktu tersebut.');
+        }
+
+        // Determine format
+        const formatBtn = document.querySelector('.format-chips .chip.active');
+        const isExcel = formatBtn.textContent.includes('Excel');
+
+        // Prepare table data
+        const headers = ['Tanggal', 'Sesi', 'Petugas', 'Siswa Absen', 'Kelas', 'Status Absen', 'Catatan Laporan'];
+        const rows = [];
+
+        data.forEach(laporan => {
+          const petugas = laporan.profiles?.nama || 'Unknown';
+          const catatan = laporan.catatan || '';
+          const absensi = laporan.absensi_piket || [];
+          
+          if (absensi.length === 0) {
+            rows.push([laporan.tanggal, laporan.sesi, petugas, '-', '-', '-', catatan]);
+          } else {
+            absensi.forEach(a => {
+              const siswaNama = a.siswa?.nama || '-';
+              const kelasNama = a.siswa?.kelas?.nama || '-';
+              rows.push([laporan.tanggal, laporan.sesi, petugas, siswaNama, kelasNama, a.status, catatan]);
+            });
+          }
+        });
+
+        if (isExcel) {
+          // Export to Excel using SheetJS
+          const wb = XLSX.utils.book_new();
+          const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+          
+          // Basic styling adjustments for col width
+          ws['!cols'] = [
+            {wch: 12}, // Tanggal
+            {wch: 8},  // Sesi
+            {wch: 20}, // Petugas
+            {wch: 20}, // Siswa Absen
+            {wch: 10}, // Kelas
+            {wch: 12}, // Status
+            {wch: 40}  // Catatan
+          ];
+          
+          XLSX.utils.book_append_sheet(wb, ws, "Laporan Piket");
+          XLSX.writeFile(wb, `Laporan_Piket_${startDate}_to_${endDate}.xlsx`);
+        } else {
+          // Export to PDF using jsPDF + autoTable
+          const { jsPDF } = window.jspdf;
+          const doc = new jsPDF({ orientation: 'landscape' });
+          
+          doc.setFontSize(16);
+          doc.text('Laporan Guru Piket & Presensi', 14, 15);
+          doc.setFontSize(11);
+          doc.text(`Periode: ${startDate} s/d ${endDate}`, 14, 22);
+
+          doc.autoTable({
+            startY: 28,
+            head: [headers],
+            body: rows,
+            theme: 'grid',
+            headStyles: { fillColor: [26, 115, 232] },
+            styles: { fontSize: 9 }
+          });
+
+          doc.save(`Laporan_Piket_${startDate}_to_${endDate}.pdf`);
+        }
+        
         window.Components.hideLoading();
-        window.Components.toast('Demo: File berhasil diunduh!', 'success');
-      }, 1500);
+        window.Components.toast('File berhasil diunduh!', 'success');
+        
+      } catch (err) {
+        window.Components.hideLoading();
+        console.error(err);
+        window.Components.toast(err.message || 'Gagal mengekspor data', 'error');
+      }
     });
   }
 

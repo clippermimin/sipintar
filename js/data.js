@@ -205,5 +205,39 @@ window.APP_DATA = {
   
   async getAktivitasGuru() {
     return [];
+  },
+  
+  async getExportData(startDate, endDate) {
+    let query = window.supabase
+      .from('laporan_piket')
+      .select(`
+        id, tanggal, sesi, catatan, status,
+        profiles!guru_id (nama),
+        absensi_piket (
+          status,
+          siswa (
+            nama,
+            kelas (
+              nama, jenjang, jurusan
+            )
+          )
+        )
+      `)
+      .order('tanggal', { ascending: true });
+
+    if (startDate) {
+      query = query.gte('tanggal', startDate);
+    }
+    if (endDate) {
+      query = query.lte('tanggal', endDate);
+    }
+
+    const { data, error } = await query;
+    if (error) {
+      console.error('Error fetching export data:', error);
+      throw error;
+    }
+
+    return data || [];
   }
 };
