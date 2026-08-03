@@ -14,7 +14,7 @@
     const hariTanggal = await window.APP_DATA.getHariTanggal();
     kelasList = await window.APP_DATA.getAllKelas();
     
-    const { data: guruData } = await window.supabase.from('profiles').select('*').in('role', ['guru', 'admin']).order('nama');
+    const { data: guruData } = await window.supabase.from('profiles').select('*').eq('role', 'guru').order('nama');
     allGuru = guruData || [];
 
     const html = `
