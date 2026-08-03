@@ -76,6 +76,9 @@
   }
   
   async function render() {
+    const stats = await window.APP_DATA.getAdminStats();
+    const aktivitas = await window.APP_DATA.getAdminAktivitas();
+
     const statGrid = `
       <div class="stat-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 24px;">
         <div class="stat-card" style="background: white; padding: 16px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 16px;">
@@ -83,7 +86,7 @@
             <span class="material-icons-outlined">people</span>
           </div>
           <div>
-            <div class="stat-card-value" style="font-size: 24px; font-weight: bold; color: #333;">6</div>
+            <div class="stat-card-value" style="font-size: 24px; font-weight: bold; color: #333;">${stats.totalGuru}</div>
             <div class="stat-card-label" style="font-size: 14px; color: #666;">Total Guru</div>
           </div>
         </div>
@@ -92,7 +95,7 @@
             <span class="material-icons-outlined">school</span>
           </div>
           <div>
-            <div class="stat-card-value" style="font-size: 24px; font-weight: bold; color: #333;">96</div>
+            <div class="stat-card-value" style="font-size: 24px; font-weight: bold; color: #333;">${stats.totalSiswa}</div>
             <div class="stat-card-label" style="font-size: 14px; color: #666;">Total Siswa</div>
           </div>
         </div>
@@ -101,7 +104,7 @@
             <span class="material-icons-outlined">description</span>
           </div>
           <div>
-            <div class="stat-card-value" style="font-size: 24px; font-weight: bold; color: #333;">2</div>
+            <div class="stat-card-value" style="font-size: 24px; font-weight: bold; color: #333;">${stats.laporanHariIni}</div>
             <div class="stat-card-label" style="font-size: 14px; color: #666;">Laporan Hari Ini</div>
           </div>
         </div>
@@ -110,44 +113,31 @@
             <span class="material-icons-outlined">trending_up</span>
           </div>
           <div>
-            <div class="stat-card-value" style="font-size: 24px; font-weight: bold; color: #333;">98%</div>
+            <div class="stat-card-value" style="font-size: 24px; font-weight: bold; color: #333;">${stats.kehadiran}</div>
             <div class="stat-card-label" style="font-size: 14px; color: #666;">Kehadiran</div>
           </div>
         </div>
       </div>
     `;
 
-    const aktivitasHtml = (window.APP_DATA.aktivitasGuru || []).map(act => `
-      <div class="list-item" style="display: flex; align-items: center; gap: 16px; padding: 12px 0; border-bottom: 1px solid #eee;">
-        <div class="list-item-icon" style="width: 40px; height: 40px; border-radius: 50%; background: ${act.color}20; color: ${act.color}; display: flex; align-items: center; justify-content: center;">
-          <span class="material-icons-outlined">${act.icon}</span>
+    let aktivitasHtml = '<div style="text-align: center; color: #999; font-size: 14px; padding: 16px;">Belum ada aktivitas</div>';
+    
+    if (aktivitas && aktivitas.length > 0) {
+      aktivitasHtml = aktivitas.map(act => `
+        <div class="list-item" style="display: flex; align-items: center; gap: 16px; padding: 12px 0; border-bottom: 1px solid #eee;">
+          <div class="list-item-icon" style="width: 40px; height: 40px; border-radius: 50%; background: ${act.color}20; color: ${act.color}; display: flex; align-items: center; justify-content: center;">
+            <span class="material-icons-outlined">${act.icon}</span>
+          </div>
+          <div class="list-item-content" style="flex: 1;">
+            <div class="list-item-title" style="font-weight: 500; font-size: 14px; color: #333;">${act.title}</div>
+            <div class="list-item-subtitle" style="font-size: 12px; color: #666;">${act.subtitle}</div>
+          </div>
+          <div class="list-item-right" style="font-size: 12px; color: #999;">
+            ${act.time}
+          </div>
         </div>
-        <div class="list-item-content" style="flex: 1;">
-          <div class="list-item-title" style="font-weight: 500; font-size: 14px; color: #333;">${act.title}</div>
-          <div class="list-item-subtitle" style="font-size: 12px; color: #666;">${act.subtitle}</div>
-        </div>
-        <div class="list-item-right" style="font-size: 12px; color: #999;">
-          ${act.time}
-        </div>
-      </div>
-    `).join('');
-
-    const quickAccess = `
-      <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
-        <button onclick="window.Router.navigate('/admin/guru')" class="btn btn-outline" style="padding: 16px; display: flex; flex-direction: column; align-items: center; gap: 8px; border: 1px solid #e0e0e0; border-radius: 8px; background: white; cursor: pointer;">
-          <span class="material-icons-outlined" style="font-size: 24px; color: #1a73e8;">people</span>
-          Kelola Guru
-        </button>
-        <button onclick="window.Router.navigate('/admin/siswa')" class="btn btn-outline" style="padding: 16px; display: flex; flex-direction: column; align-items: center; gap: 8px; border: 1px solid #e0e0e0; border-radius: 8px; background: white; cursor: pointer;">
-          <span class="material-icons-outlined" style="font-size: 24px; color: #388e3c;">school</span>
-          Kelola Siswa
-        </button>
-        <button onclick="window.Router.navigate('/export')" class="btn btn-outline" style="padding: 16px; display: flex; flex-direction: column; align-items: center; gap: 8px; border: 1px solid #e0e0e0; border-radius: 8px; background: white; cursor: pointer;">
-          <span class="material-icons-outlined" style="font-size: 24px; color: #7b1fa2;">download</span>
-          Export Laporan
-        </button>
-      </div>
-    `;
+      `).join('');
+    }
 
     const content = `
       <div style="margin-bottom: 24px;">
@@ -157,15 +147,10 @@
 
       ${statGrid}
 
-      <div style="display: grid; grid-template-columns: 1fr; gap: 24px; @media(min-width: 768px) { grid-template-columns: 2fr 1fr; }">
+      <div style="display: grid; grid-template-columns: 1fr; gap: 24px;">
         <div class="card" style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
           <h3 style="margin: 0 0 16px 0; font-size: 16px; color: #333;">Aktivitas Terbaru</h3>
           <div>${aktivitasHtml}</div>
-        </div>
-
-        <div class="card" style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
-          <h3 style="margin: 0 0 16px 0; font-size: 16px; color: #333;">Akses Cepat</h3>
-          ${quickAccess}
         </div>
       </div>
       

@@ -239,5 +239,46 @@ window.APP_DATA = {
     }
 
     return data || [];
+  },
+
+  async getAdminStats() {
+    const { count: totalGuru } = await window.supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'guru');
+    const { count: totalSiswa } = await window.supabase.from('siswa').select('*', { count: 'exact', head: true });
+    
+    const today = new Date().toISOString().split('T')[0];
+    const { count: laporanHariIni } = await window.supabase.from('laporan_piket').select('*', { count: 'exact', head: true }).eq('tanggal', today);
+    
+    const { count: tidakHadir } = await window.supabase.from('absensi_piket').select('id, laporan_piket!inner(tanggal)', { count: 'exact', head: true }).eq('laporan_piket.tanggal', today);
+    
+    let kehadiran = '100%';
+    if (totalSiswa > 0 && tidakHadir !== null) {
+       const persentase = ((totalSiswa - tidakHadir) / totalSiswa) * 100;
+       kehadiran = (persentase < 0 ? 0 : persentase).toFixed(1).replace('.0', '') + '%';
+    }
+
+    return { 
+      totalGuru: totalGuru || 0, 
+      totalSiswa: totalSiswa || 0, 
+      laporanHariIni: laporanHariIni || 0, 
+      kehadiran 
+    };
+  },
+
+  async getAdminAktivitas() {
+    const { data } = await window.supabase
+      .from('laporan_piket')
+      .select('id, tanggal, sesi, created_at, profiles!guru_id(nama)')
+      .order('created_at', { ascending: false })
+      .limit(5);
+
+    if (!data) return [];
+    
+    return data.map(item => ({
+      icon: 'description',
+      color: '#1a73e8',
+      title: 'Laporan Piket Masuk',
+      subtitle: `Dilaporkan oleh ${item.profiles?.nama || 'Unknown'} (Sesi ${item.sesi})`,
+      time: new Date(item.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+    }));
   }
 };
