@@ -204,7 +204,29 @@ window.APP_DATA = {
   },
   
   async getAktivitasGuru() {
-    return [];
+    const guru = window.APP_STATE.currentGuru;
+    if (!guru) return [];
+    
+    const { data } = await window.supabase
+      .from('laporan_piket')
+      .select('id, tanggal, sesi, created_at, status')
+      .eq('guru_id', guru.id)
+      .order('created_at', { ascending: false })
+      .limit(3);
+      
+    if (!data) return [];
+    
+    return data.map(d => {
+      const dateObj = new Date(d.created_at);
+      const timeStr = dateObj.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace('.', ':') + ' WIB';
+      return {
+        icon: 'assignment_turned_in',
+        color: d.status === 'Selesai' ? 'success' : 'primary',
+        title: `Laporan Piket ${d.sesi}`,
+        subtitle: `Tanggal ${d.tanggal}`,
+        time: timeStr
+      };
+    });
   },
   
   async getExportData(startDate, endDate) {
