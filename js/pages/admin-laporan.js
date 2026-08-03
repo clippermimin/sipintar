@@ -57,71 +57,79 @@
     `;
   }
   
-  async function render() {
-    window.Components.showLoading();
-    
-    // Fetch laporan real dari Supabase
+  async function fetchAndRenderList() {
     const { data: laporans, error } = await window.supabase
       .from('laporan_piket')
       .select('id, tanggal, sesi, status, catatan, profiles!guru_id(nama)')
       .order('created_at', { ascending: false });
 
-    window.Components.hideLoading();
-    
     if (error) {
       window.Components.toast('Gagal memuat laporan', 'error');
       return;
     }
 
-    const listHtml = (laporans || []).length > 0
-      ? (laporans || []).map(l => {
-          const badgeHtml = l.status === 'Selesai' 
-            ? `<span class="badge" style="background: #e8f5e9; color: #2e7d32; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 500;">Selesai</span>`
-            : `<span class="badge" style="background: #fff3e0; color: #ef6c00; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 500;">Belum Selesai</span>`;
+    window._laporanAll = laporans || [];
+    applyFilters();
+  }
 
-          return `
-            <div class="card laporan-card" style="background: white; padding: 16px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 12px;">
-              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
-                <div>
-                  <div style="font-weight: 500; font-size: 16px; color: #333;">${l.tanggal} &bull; Sesi ${l.sesi}</div>
-                  <div style="font-size: 13px; color: #666; margin-top: 4px;">Petugas: ${l.profiles?.nama || '-'}</div>
-                  ${l.catatan ? `<div style="font-size: 12px; color: #888; margin-top: 4px; font-style: italic;">${l.catatan.substring(0, 60)}${l.catatan.length > 60 ? '...' : ''}</div>` : ''}
-                </div>
-                ${badgeHtml}
-              </div>
-            </div>
-          `;
-        }).join('')
-      : '<p style="color:#666; text-align:center; padding: 32px 0;">Belum ada laporan masuk.</p>';
+  function applyFilters() {
+    const startDate = document.getElementById('filterStartDate').value;
+    const endDate = document.getElementById('filterEndDate').value;
+    
+    let filtered = window._laporanAll || [];
+    
+    if (startDate) {
+      filtered = filtered.filter(l => l.tanggal >= startDate);
+    }
+    if (endDate) {
+      filtered = filtered.filter(l => l.tanggal <= endDate);
+    }
+    
+    renderList(filtered);
+  }
 
+  async function render() {
     const content = `
       <div style="margin-bottom: 24px;">
         <h1 style="margin: 0 0 8px 0; font-size: 24px; color: #333;">Laporan Piket</h1>
         <p style="margin: 0; color: #666;">Daftar laporan hasil piket harian</p>
       </div>
 
-      <div style="display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap;">
-        <button id="filterSemua" class="chip-btn active" style="padding: 6px 16px; border-radius: 16px; background: #1a73e8; color: white; border: none; font-size: 14px; cursor: pointer;">Semua</button>
-        <button id="filterHariIni" class="chip-btn" style="padding: 6px 16px; border-radius: 16px; background: white; border: 1px solid #ddd; color: #666; font-size: 14px; cursor: pointer;">Hari Ini</button>
-        <button id="filterMingguIni" class="chip-btn" style="padding: 6px 16px; border-radius: 16px; background: white; border: 1px solid #ddd; color: #666; font-size: 14px; cursor: pointer;">Minggu Ini</button>
+      <div class="card" style="background: white; padding: 16px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 24px;">
+        <h3 style="margin-top: 0; margin-bottom: 12px; font-size: 14px; color: #666;">Filter Rentang Tanggal</h3>
+        <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;">
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" style="font-size: 12px;">Dari Tanggal</label>
+            <input type="date" id="filterStartDate" class="form-input">
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" style="font-size: 12px;">Sampai Tanggal</label>
+            <input type="date" id="filterEndDate" class="form-input">
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button id="btnApplyFilter" class="btn btn-primary" style="padding: 10px 16px;">Terapkan</button>
+            <button id="btnResetFilter" class="btn btn-outline" style="padding: 10px 16px;">Reset</button>
+          </div>
+        </div>
       </div>
 
       <div id="laporanList" style="display: flex; flex-direction: column; gap: 4px;">
-        ${listHtml}
+        <p style="color:#666;">Memuat laporan...</p>
       </div>
 
       <div style="margin-top: 32px; text-align: center;">
         <button id="btnExportLaporan" class="btn btn-outline" style="padding: 12px 24px; border-radius: 8px; border: 1px solid #1a73e8; color: #1a73e8; background: white; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
-          <span class="material-icons-outlined">download</span> Export Semua Laporan
+          <span class="material-icons-outlined">download</span> Export Laporan
         </button>
       </div>
     `;
 
     const html = adminLayout('laporan', content);
     window.Components.renderPage(html);
-    // Store laporan data for filtering
-    window._laporanAll = laporans || [];
-    setTimeout(bindEvents, 200);
+    setTimeout(() => {
+      bindEvents();
+      fetchAndRenderList();
+    }, 200);
   }
 
   function bindEvents() {
@@ -134,27 +142,12 @@
     if (btnCloseDrawer) btnCloseDrawer.addEventListener('click', () => { sidebar.classList.remove('open'); overlay.classList.add('hidden'); });
     if (overlay) overlay.addEventListener('click', () => { sidebar.classList.remove('open'); overlay.classList.add('hidden'); });
 
-    // Filter chips
-    const today = new Date().toISOString().split('T')[0];
-    const mondayOffset = new Date().getDay() === 0 ? -6 : 1 - new Date().getDay();
-    const monday = new Date(Date.now() + mondayOffset * 86400000).toISOString().split('T')[0];
-
-    const filterBtn = (id, filterFn) => {
-      const btn = document.getElementById(id);
-      if (!btn) return;
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.chip-btn').forEach(b => {
-          b.style.background = 'white'; b.style.color = '#666'; b.style.border = '1px solid #ddd';
-        });
-        btn.style.background = '#1a73e8'; btn.style.color = 'white'; btn.style.border = 'none';
-        const filtered = filterFn ? (window._laporanAll || []).filter(filterFn) : (window._laporanAll || []);
-        renderList(filtered);
-      });
-    };
-
-    filterBtn('filterSemua', null);
-    filterBtn('filterHariIni', l => l.tanggal === today);
-    filterBtn('filterMingguIni', l => l.tanggal >= monday);
+    document.getElementById('btnApplyFilter').addEventListener('click', applyFilters);
+    document.getElementById('btnResetFilter').addEventListener('click', () => {
+      document.getElementById('filterStartDate').value = '';
+      document.getElementById('filterEndDate').value = '';
+      applyFilters();
+    });
 
     document.getElementById('btnExportLaporan')?.addEventListener('click', () => {
       window.Router.navigate('/export');
@@ -164,20 +157,43 @@
   function renderList(laporans) {
     const el = document.getElementById('laporanList');
     if (!el) return;
-    if (!laporans.length) { el.innerHTML = '<p style="color:#666;text-align:center;padding:32px 0;">Tidak ada laporan untuk filter ini.</p>'; return; }
+    if (!laporans.length) { el.innerHTML = '<p style="color:#666;text-align:center;padding:32px 0;">Tidak ada laporan untuk rentang tanggal ini.</p>'; return; }
+    
     el.innerHTML = laporans.map(l => {
       const badgeHtml = l.status === 'Selesai' 
         ? `<span class="badge" style="background:#e8f5e9;color:#2e7d32;padding:4px 8px;border-radius:4px;font-size:12px;font-weight:500;">Selesai</span>`
         : `<span class="badge" style="background:#fff3e0;color:#ef6c00;padding:4px 8px;border-radius:4px;font-size:12px;font-weight:500;">Belum Selesai</span>`;
+      
       return `
-        <div class="card" style="background:white;padding:16px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;">
-          <div>
-            <div style="font-weight:500;font-size:16px;color:#333;">${l.tanggal} &bull; Sesi ${l.sesi}</div>
-            <div style="font-size:13px;color:#666;margin-top:4px;">Petugas: ${l.profiles?.nama || '-'}</div>
+        <div class="card" style="background:white;padding:16px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);margin-bottom:12px;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
+            <div>
+              <div style="font-weight:500;font-size:16px;color:#333;">${l.tanggal} &bull; Sesi ${l.sesi}</div>
+              <div style="font-size:13px;color:#666;margin-top:4px;">Petugas: ${l.profiles?.nama || '-'}</div>
+              ${l.catatan ? `<div style="font-size:12px;color:#888;margin-top:4px;font-style:italic;">${l.catatan}</div>` : ''}
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
+              ${badgeHtml}
+              <button class="btn btn-outline del-laporan-btn" data-id="${l.id}" style="padding:4px 8px;font-size:12px;border-radius:4px;border:1px solid #ea4335;color:#ea4335;background:white;cursor:pointer;">Hapus</button>
+            </div>
           </div>
-          ${badgeHtml}
         </div>`;
     }).join('');
+
+    document.querySelectorAll('.del-laporan-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        if(confirm('Yakin ingin menghapus laporan ini beserta semua data absensinya?')) {
+          const id = e.target.dataset.id;
+          const { error } = await window.supabase.from('laporan_piket').delete().eq('id', id);
+          if (error) {
+            window.Components.toast('Gagal menghapus laporan: ' + error.message, 'error');
+          } else {
+            window.Components.toast('Laporan berhasil dihapus');
+            fetchAndRenderList();
+          }
+        }
+      });
+    });
   }
 
   window.Router.register('/admin/laporan', render);
