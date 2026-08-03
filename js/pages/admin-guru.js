@@ -81,22 +81,22 @@
     `;
   }
   
-  async function render() {
-    window.Components.showLoading();
+  async function fetchAndRenderList() {
+    const container = document.getElementById('guruListContainer');
+    if (!container) return;
     
-    // Fetch data from Supabase
     const { data: guruList, error } = await window.supabase
       .from('profiles')
       .select('*')
       .eq('role', 'guru')
       .order('nama');
       
-    window.Components.hideLoading();
-    
     if (error) {
-      window.Components.toast('Gagal memuat data guru', 'error');
+      container.innerHTML = '<p style="color: red;">Gagal memuat data guru</p>';
       return;
     }
+    
+    document.getElementById('guruCountBadge').innerText = `${(guruList||[]).length} Guru`;
     
     let guruHtml = (guruList || []).map(g => `
       <div class="card" style="background: white; padding: 16px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 16px; margin-bottom: 12px;">
@@ -115,12 +115,43 @@
     if (!guruList || guruList.length === 0) {
       guruHtml = '<p style="color: #666;">Belum ada data guru.</p>';
     }
+    container.innerHTML = guruHtml;
 
+    // Rebind inner events
+    document.querySelectorAll('.edit-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = e.target.dataset.id;
+        document.getElementById('modalTitle').innerText = 'Edit Guru';
+        document.getElementById('guruId').value = id;
+        document.getElementById('guruNama').value = e.target.dataset.nama;
+        document.getElementById('guruNip').value = e.target.dataset.nip;
+        document.getElementById('guruNip').disabled = true;
+        document.getElementById('modalGuru').classList.remove('hidden');
+      });
+    });
+    
+    document.querySelectorAll('.del-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        if(confirm('Yakin ingin menghapus guru ini?')) {
+          const id = e.target.dataset.id;
+          const { error } = await window.supabase.from('profiles').delete().eq('id', id);
+          if (error) {
+            window.Components.toast('Gagal menghapus data: ' + error.message, 'error');
+          } else {
+            window.Components.toast('Berhasil dihapus');
+            fetchAndRenderList();
+          }
+        }
+      });
+    });
+  }
+
+  async function render() {
     const content = `
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
         <div>
           <h1 style="margin: 0 0 8px 0; font-size: 24px; color: #333;">Kelola Guru</h1>
-          <span class="badge badge-primary" style="background: #e3f2fd; color: #1976d2; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 500;">${(guruList||[]).length} Guru</span>
+          <span id="guruCountBadge" class="badge badge-primary" style="background: #e3f2fd; color: #1976d2; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 500;">... Guru</span>
         </div>
       </div>
       
@@ -131,8 +162,8 @@
         </div>
       </div>
 
-      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px;">
-        ${guruHtml}
+      <div id="guruListContainer" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px;">
+        <p style="color:#666;">Memuat data guru...</p>
       </div>
       
       <button id="btnTambahGuru" class="btn btn-primary" style="position: fixed; bottom: 24px; right: 24px; background: #1a73e8; color: white; border: none; padding: 12px 24px; border-radius: 24px; font-weight: 500; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(26,115,232,0.3); cursor: pointer; z-index: 90;">
@@ -142,7 +173,10 @@
 
     const html = adminLayout('guru', content);
     window.Components.renderPage(html);
-    setTimeout(bindEvents, 200);
+    setTimeout(() => {
+      bindEvents();
+      fetchAndRenderList();
+    }, 200);
   }
 
   function bindEvents() {
@@ -162,41 +196,12 @@
       document.getElementById('modalTitle').innerText = 'Tambah Guru';
       form.reset();
       document.getElementById('guruId').value = '';
+      document.getElementById('guruNip').disabled = false;
       modal.classList.remove('hidden');
     });
 
     document.getElementById('btnBatal').addEventListener('click', () => {
       modal.classList.add('hidden');
-    });
-
-    document.querySelectorAll('.edit-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const id = e.target.dataset.id;
-        document.getElementById('modalTitle').innerText = 'Edit Guru';
-        document.getElementById('guruId').value = id;
-        document.getElementById('guruNama').value = e.target.dataset.nama;
-        document.getElementById('guruNip').value = e.target.dataset.nip;
-        // Jika edit, NIP di-disable agar tidak repot ubah email auth (opsional, tapi disarankan)
-        document.getElementById('guruNip').disabled = true;
-        modal.classList.remove('hidden');
-      });
-    });
-    
-    document.querySelectorAll('.del-btn').forEach(btn => {
-      btn.addEventListener('click', async (e) => {
-        if(confirm('Yakin ingin menghapus guru ini?')) {
-          const id = e.target.dataset.id;
-          window.Components.showLoading();
-          const { error } = await window.supabase.from('profiles').delete().eq('id', id);
-          window.Components.hideLoading();
-          if (error) {
-            window.Components.toast('Gagal menghapus data', 'error');
-          } else {
-            window.Components.toast('Berhasil dihapus');
-            render();
-          }
-        }
-      });
     });
 
     form.addEventListener('submit', async (e) => {
@@ -208,28 +213,18 @@
         nip: document.getElementById('guruNip').value,
       };
 
-      window.Components.showLoading();
+      const submitBtn = form.querySelector('button[type="submit"]');
+      const originalText = submitBtn.innerText;
+      submitBtn.innerText = 'Menyimpan...';
+      submitBtn.disabled = true;
       
       let error;
       if (id) {
-        // Edit (hanya nama, NIP tidak diubah karena terkait Auth Email)
         const res = await window.supabase.from('profiles').update({ nama: data.nama }).eq('id', id);
         error = res.error;
       } else {
-        // Create auth user without logging admin out
-        // Use a temporary client with persistSession: false
-        const supabaseUrl = 'YOUR_SUPABASE_URL_HERE'; // It's accessible via window.supabase.supabaseUrl ? No, we can get it from script tag if possible, or just use fetch?
-        // Actually, we can just use the global supabase client if we temporarily store the session and restore it, 
-        // OR better, create tempClient using window.supabase keys if they are exposed.
-        // Let's assume window.supabase.supabaseUrl exists or we have to use fetch to the API.
-        // A simpler hack: Since Supabase v2, signUp doesn't log you in IF you set email confirmation to true, 
-        // but if it's false, it does. 
-        // We will just do a standard API call via fetch to create the user, avoiding the client library's state modification.
-        
         try {
-          const { data: { session } } = await window.supabase.auth.getSession();
-          if (!session) throw new Error('Tidak ada sesi admin aktif');
-
+          const pwd = data.nip.length >= 6 ? data.nip : data.nip + '123'; // Supabase requires 6 char min
           const response = await fetch(`${window.supabaseUrl}/auth/v1/signup`, {
             method: 'POST',
             headers: {
@@ -238,7 +233,7 @@
             },
             body: JSON.stringify({
               email: `${data.nip}@sipintar.com`,
-              password: data.nip
+              password: pwd
             })
           });
 
@@ -247,7 +242,6 @@
             throw new Error(authData.msg || authData.message || 'Gagal mendaftarkan auth guru');
           }
 
-          // Then insert profile
           data.id = authData.id || authData.user.id;
           const res = await window.supabase.from('profiles').insert([data]);
           error = res.error;
@@ -256,7 +250,9 @@
         }
       }
       
-      window.Components.hideLoading();
+      submitBtn.innerText = originalText;
+      submitBtn.disabled = false;
+
       if (error) {
         console.error(error);
         const errorMsg = error.message || 'Pastikan setup Auth/FK';
@@ -264,7 +260,7 @@
       } else {
         window.Components.toast('Berhasil disimpan');
         modal.classList.add('hidden');
-        render();
+        fetchAndRenderList();
       }
     });
   }
