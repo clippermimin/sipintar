@@ -62,7 +62,12 @@
               </div>
               <div class="form-group mb-4" id="formGroupPassword">
                 <label class="form-label">Password</label>
-                <input type="password" id="guruPassword" class="form-input" placeholder="Minimal 6 karakter" minlength="6">
+                <div style="position: relative;">
+                  <input type="password" id="guruPassword" class="form-input" placeholder="Minimal 6 karakter" minlength="6" style="padding-right: 40px;">
+                  <button type="button" id="toggle-guru-password" style="position: absolute; right: 12px; top: 10px; background: none; border: none; cursor: pointer; color: #666; display: flex; padding: 0;">
+                    <span class="material-icons-outlined" id="toggle-guru-password-icon" style="font-size: 20px;">visibility_off</span>
+                  </button>
+                </div>
               </div>
               <div style="display: flex; gap: 12px; justify-content: flex-end;">
                 <button type="button" id="btnBatal" class="btn btn-outline">Batal</button>
@@ -272,6 +277,21 @@
         fetchAndRenderList();
       }
     });
+
+    const btnTogglePwd = document.getElementById('toggle-guru-password');
+    if (btnTogglePwd) {
+      btnTogglePwd.addEventListener('click', () => {
+        const pwdInput = document.getElementById('guruPassword');
+        const icon = document.getElementById('toggle-guru-password-icon');
+        if (pwdInput.type === 'password') {
+          pwdInput.type = 'text';
+          icon.innerText = 'visibility';
+        } else {
+          pwdInput.type = 'password';
+          icon.innerText = 'visibility_off';
+        }
+      });
+    }
   }
 
   window.Router.register('/admin/guru', render);

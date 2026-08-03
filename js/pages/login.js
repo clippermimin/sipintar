@@ -17,7 +17,12 @@
               </div>
               <div class="form-group mb-4">
                 <label class="form-label">Password</label>
-                <input type="password" id="login-password" class="form-input" placeholder="Masukkan password (default: NIP)" required>
+                <div style="position: relative;">
+                  <input type="password" id="login-password" class="form-input" placeholder="Masukkan password (default: NIP)" required style="padding-right: 40px;">
+                  <button type="button" id="toggle-password" style="position: absolute; right: 12px; top: 10px; background: none; border: none; cursor: pointer; color: #666; display: flex; padding: 0;">
+                    <span class="material-icons-outlined" id="toggle-password-icon" style="font-size: 20px;">visibility_off</span>
+                  </button>
+                </div>
               </div>
               
               <button type="submit" class="btn btn-primary btn-full btn-lg">Masuk</button>
@@ -60,6 +65,18 @@
   
   function bindEvents() {
     document.getElementById('login-form').addEventListener('submit', handleLogin);
+    
+    document.getElementById('toggle-password').addEventListener('click', () => {
+      const pwdInput = document.getElementById('login-password');
+      const icon = document.getElementById('toggle-password-icon');
+      if (pwdInput.type === 'password') {
+        pwdInput.type = 'text';
+        icon.innerText = 'visibility';
+      } else {
+        pwdInput.type = 'password';
+        icon.innerText = 'visibility_off';
+      }
+    });
   }
   
   Router.register('/login', render);
