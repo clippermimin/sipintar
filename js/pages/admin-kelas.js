@@ -94,8 +94,9 @@
     `;
   }
   
-  async function render() {
-    window.Components.showLoading();
+  async function fetchAndRenderList() {
+    const container = document.getElementById('kelasListContainer');
+    if (!container) return;
     
     const { data: kelasList, error } = await window.supabase
       .from('kelas')
@@ -103,8 +104,6 @@
       .order('jenjang')
       .order('nama');
 
-    window.Components.hideLoading();
-    
     if (error) {
       window.Components.toast('Gagal memuat data kelas', 'error');
       return;
@@ -138,16 +137,48 @@
       `;
     }).join('') || '<p style="color:#666;">Belum ada data kelas.</p>';
 
+    container.innerHTML = listHtml;
+    document.getElementById('kelasCountBadge').innerText = `${(kelasList || []).length} Kelas`;
+    
+    // Rebind inner events
+    document.querySelectorAll('.edit-kelas-btn').forEach(btn => {
+      btn.addEventListener('click', e => {
+        const b = e.target;
+        document.getElementById('modalTitleKelas').innerText = 'Edit Kelas';
+        document.getElementById('kelasId').value = b.dataset.id;
+        document.getElementById('kelasNama').value = b.dataset.nama;
+        document.getElementById('kelasJenjang').value = b.dataset.jenjang;
+        document.getElementById('kelasJurusan').value = b.dataset.jurusan;
+        document.getElementById('modalKelas').classList.remove('hidden');
+      });
+    });
+
+    document.querySelectorAll('.del-kelas-btn').forEach(btn => {
+      btn.addEventListener('click', async e => {
+        if (confirm('Yakin ingin menghapus kelas ini? Semua data siswa dalam kelas ini juga akan terhapus!')) {
+          const { error } = await window.supabase.from('kelas').delete().eq('id', e.target.dataset.id);
+          if (error) {
+            window.Components.toast('Gagal menghapus kelas', 'error');
+          } else {
+            window.Components.toast('Kelas berhasil dihapus');
+            fetchAndRenderList(); // Refresh data smoothly
+          }
+        }
+      });
+    });
+  }
+
+  async function render() {
     const content = `
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
         <div>
           <h1 style="margin: 0 0 8px 0; font-size: 24px; color: #333;">Kelola Kelas</h1>
-          <span class="badge" style="background: #e3f2fd; color: #1976d2; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 500;">${(kelasList || []).length} Kelas</span>
+          <span id="kelasCountBadge" class="badge" style="background: #e3f2fd; color: #1976d2; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 500;">... Kelas</span>
         </div>
       </div>
 
-      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 16px;">
-        ${listHtml}
+      <div id="kelasListContainer" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 16px;">
+        <p style="color:#666;">Memuat data kelas...</p>
       </div>
 
       <button id="btnTambahKelas" class="btn btn-primary" style="position: fixed; bottom: 24px; right: 24px; background: #1a73e8; color: white; border: none; padding: 12px 24px; border-radius: 24px; font-weight: 500; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(26,115,232,0.3); cursor: pointer; z-index: 90;">
@@ -157,7 +188,10 @@
 
     const html = adminLayout('kelas', content);
     window.Components.renderPage(html);
-    setTimeout(bindEvents, 200);
+    setTimeout(() => {
+      bindEvents();
+      fetchAndRenderList();
+    }, 200);
   }
 
   function bindEvents() {
@@ -184,45 +218,21 @@
       modal.classList.add('hidden');
     });
 
-    document.querySelectorAll('.edit-kelas-btn').forEach(btn => {
-      btn.addEventListener('click', e => {
-        const b = e.target;
-        document.getElementById('modalTitleKelas').innerText = 'Edit Kelas';
-        document.getElementById('kelasId').value = b.dataset.id;
-        document.getElementById('kelasNama').value = b.dataset.nama;
-        document.getElementById('kelasJenjang').value = b.dataset.jenjang;
-        document.getElementById('kelasJurusan').value = b.dataset.jurusan;
-        modal.classList.remove('hidden');
-      });
-    });
-
-    document.querySelectorAll('.del-kelas-btn').forEach(btn => {
-      btn.addEventListener('click', async e => {
-        if (confirm('Yakin ingin menghapus kelas ini? Semua data siswa dalam kelas ini juga akan terhapus!')) {
-          window.Components.showLoading();
-          const { error } = await window.supabase.from('kelas').delete().eq('id', e.target.dataset.id);
-          window.Components.hideLoading();
-          if (error) {
-            window.Components.toast('Gagal menghapus kelas', 'error');
-          } else {
-            window.Components.toast('Kelas berhasil dihapus');
-            render();
-          }
-        }
-      });
-    });
-
     form.addEventListener('submit', async e => {
       e.preventDefault();
       const id = document.getElementById('kelasId').value;
       const nama = document.getElementById('kelasNama').value.trim();
       const jenjang = document.getElementById('kelasJenjang').value;
       const jurusan = document.getElementById('kelasJurusan').value;
-      // Auto-generate ID from name if new
       const kelasId = id || nama.toLowerCase().replace(/\s+/g, '-');
       const data = { id: kelasId, nama, jenjang, jurusan };
 
-      window.Components.showLoading();
+      // Change button text to show progress
+      const submitBtn = form.querySelector('button[type="submit"]');
+      const originalText = submitBtn.innerText;
+      submitBtn.innerText = 'Menyimpan...';
+      submitBtn.disabled = true;
+
       let error;
       if (id) {
         const res = await window.supabase.from('kelas').update({ nama, jenjang, jurusan }).eq('id', id);
@@ -231,13 +241,16 @@
         const res = await window.supabase.from('kelas').insert([data]);
         error = res.error;
       }
-      window.Components.hideLoading();
+      
+      submitBtn.innerText = originalText;
+      submitBtn.disabled = false;
+
       if (error) {
         window.Components.toast('Gagal menyimpan: ' + (error.message || ''), 'error');
       } else {
         window.Components.toast('Kelas berhasil disimpan');
         modal.classList.add('hidden');
-        render();
+        fetchAndRenderList(); // Refresh data smoothly
       }
     });
   }
