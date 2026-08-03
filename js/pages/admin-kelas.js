@@ -116,26 +116,57 @@
       'TKJ': { bg: '#f3e5f5', text: '#7b1fa2' },
     };
 
-    const listHtml = (kelasList || []).map(k => {
-      const color = jurusanColors[k.jurusan] || { bg: '#f5f5f5', text: '#333' };
-      const jumlahSiswa = k.siswa?.[0]?.count ?? 0;
-      return `
-        <div class="card kelas-card" style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); transition: transform 0.2s; position: relative;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-            <h3 style="margin: 0; font-size: 18px; color: #333;">${k.nama}</h3>
-            <span class="badge" style="background: ${color.bg}; color: ${color.text}; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 500;">${k.jurusan}</span>
+    const jenjangOrder = ['X', 'XI', 'XII'];
+    const groups = {};
+    (kelasList || []).forEach(k => {
+      if (!groups[k.jenjang]) groups[k.jenjang] = [];
+      groups[k.jenjang].push(k);
+    });
+
+    let listHtml = '';
+    if ((kelasList || []).length === 0) {
+      listHtml = '<p style="color:#666; grid-column: 1 / -1;">Belum ada data kelas.</p>';
+    } else {
+      const renderCard = (k) => {
+        const color = jurusanColors[k.jurusan] || { bg: '#f5f5f5', text: '#333' };
+        const jumlahSiswa = k.siswa?.[0]?.count ?? 0;
+        return `
+          <div class="card kelas-card" style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); transition: transform 0.2s; position: relative;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <h3 style="margin: 0; font-size: 18px; color: #333;">${k.nama}</h3>
+              <span class="badge" style="background: ${color.bg}; color: ${color.text}; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 500;">${k.jurusan}</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px; color: #666; font-size: 14px; margin-bottom: 12px;">
+              <span class="material-icons-outlined" style="font-size: 18px;">people</span>
+              <span>${jumlahSiswa} Siswa</span>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn btn-outline edit-kelas-btn" data-id="${k.id}" data-nama="${k.nama}" data-jenjang="${k.jenjang}" data-jurusan="${k.jurusan}" style="padding: 6px 12px; border: 1px solid #1a73e8; color: #1a73e8; border-radius: 6px; background: white; cursor: pointer; font-size: 13px;">Edit</button>
+              <button class="btn btn-outline del-kelas-btn" data-id="${k.id}" style="padding: 6px 12px; border: 1px solid #ea4335; color: #ea4335; border-radius: 6px; background: white; cursor: pointer; font-size: 13px;">Hapus</button>
+            </div>
           </div>
-          <div style="display: flex; align-items: center; gap: 8px; color: #666; font-size: 14px; margin-bottom: 12px;">
-            <span class="material-icons-outlined" style="font-size: 18px;">people</span>
-            <span>${jumlahSiswa} Siswa</span>
-          </div>
-          <div style="display: flex; gap: 8px;">
-            <button class="btn btn-outline edit-kelas-btn" data-id="${k.id}" data-nama="${k.nama}" data-jenjang="${k.jenjang}" data-jurusan="${k.jurusan}" style="padding: 6px 12px; border: 1px solid #1a73e8; color: #1a73e8; border-radius: 6px; background: white; cursor: pointer; font-size: 13px;">Edit</button>
-            <button class="btn btn-outline del-kelas-btn" data-id="${k.id}" style="padding: 6px 12px; border: 1px solid #ea4335; color: #ea4335; border-radius: 6px; background: white; cursor: pointer; font-size: 13px;">Hapus</button>
-          </div>
-        </div>
-      `;
-    }).join('') || '<p style="color:#666;">Belum ada data kelas.</p>';
+        `;
+      };
+
+      const renderGroup = (jenjangTitle, items) => {
+        if (!items || items.length === 0) return '';
+        let html = `<div style="grid-column: 1 / -1; margin-top: 16px; margin-bottom: 8px;">
+          <h2 style="margin: 0; font-size: 20px; color: #1a73e8; border-bottom: 2px solid #e8f0fe; padding-bottom: 8px;">Kelas ${jenjangTitle}</h2>
+        </div>`;
+        html += items.map(renderCard).join('');
+        return html;
+      };
+
+      jenjangOrder.forEach(jenjang => {
+        listHtml += renderGroup(jenjang, groups[jenjang]);
+      });
+
+      const knownJenjang = new Set(jenjangOrder);
+      const otherJenjangs = Object.keys(groups).filter(j => !knownJenjang.has(j)).sort();
+      otherJenjangs.forEach(jenjang => {
+        listHtml += renderGroup(jenjang, groups[jenjang]);
+      });
+    }
 
     container.innerHTML = listHtml;
     document.getElementById('kelasCountBadge').innerText = `${(kelasList || []).length} Kelas`;
