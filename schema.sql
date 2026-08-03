@@ -37,7 +37,7 @@ CREATE TABLE laporan_piket (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   tanggal DATE NOT NULL,
   sesi TEXT NOT NULL CHECK (sesi IN ('Pagi', 'Siang')),
-  guru_id UUID REFERENCES profiles(id),
+  guru_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
   catatan TEXT,
   foto_url TEXT,
   status TEXT DEFAULT 'Selesai',
