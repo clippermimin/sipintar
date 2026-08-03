@@ -24,21 +24,6 @@
             </form>
           </div>
           
-          <div class="login-demo-roles">
-            <p class="demo-title">Login Cepat (Akun Demo):</p>
-            <div class="demo-roles">
-              <div class="demo-role-card" id="role-guru">
-                <span class="role-emoji">👨‍🏫</span>
-                <span class="role-name">Guru/Piket</span>
-              </div>
-              <div class="demo-role-card" id="role-admin">
-                <span class="role-emoji">👨‍💼</span>
-                <span class="role-name">Admin</span>
-              </div>
-            </div>
-            <p style="font-size: 11px; text-align: center; color: #888; margin-top: 8px;">*NIP admin akan di-append @sipintar.com di balik layar</p>
-          </div>
-          
           ${Components.footer()}
         </div>
       </div>
@@ -75,16 +60,6 @@
   
   function bindEvents() {
     document.getElementById('login-form').addEventListener('submit', handleLogin);
-    
-    const setLogin = (nip, password) => {
-      document.getElementById('login-nip').value = nip;
-      document.getElementById('login-password').value = password;
-      document.getElementById('login-form').dispatchEvent(new Event('submit', { cancelable: true }));
-    };
-    
-    // Asumsikan NIP admin demo adalah 'admin123'
-    document.getElementById('role-guru').addEventListener('click', () => setLogin('123456', '123456'));
-    document.getElementById('role-admin').addEventListener('click', () => setLogin('admin123', 'admin123'));
   }
   
   Router.register('/login', render);
