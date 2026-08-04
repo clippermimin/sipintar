@@ -125,6 +125,21 @@ window.APP_DATA = {
   async submitLaporanPiket(laporanData) {
     // laporanData = { sesi, catatan, petugas_1, petugas_2, absensi: [{namaSiswa, kelas_id, status}], foto_url: '...' }
     
+    // Fetch names of Petugas 1 and Petugas 2
+    let p1Name = "Petugas 1";
+    let p2Name = "Petugas 2";
+    const { data: petugasData } = await window.supabase
+      .from('profiles')
+      .select('id, nama')
+      .in('id', [laporanData.petugas_1, laporanData.petugas_2]);
+      
+    if (petugasData) {
+      const p1 = petugasData.find(p => p.id === laporanData.petugas_1);
+      const p2 = petugasData.find(p => p.id === laporanData.petugas_2);
+      if (p1) p1Name = p1.nama;
+      if (p2) p2Name = p2.nama;
+    }
+
     // 1. Insert Laporan
     const { data: laporan, error: lapErr } = await window.supabase
       .from('laporan_piket')
@@ -132,7 +147,7 @@ window.APP_DATA = {
         tanggal: new Date().toISOString().split('T')[0],
         sesi: laporanData.sesi,
         guru_id: laporanData.petugas_1,
-        catatan: `[Petugas 1: ${laporanData.petugas_1}, Petugas 2: ${laporanData.petugas_2}] ` + laporanData.catatan,
+        catatan: `[Petugas 1: ${p1Name}, Petugas 2: ${p2Name}] ` + laporanData.catatan,
         status: laporanData.status || 'Selesai',
         foto_url: laporanData.foto_url || null
       })
