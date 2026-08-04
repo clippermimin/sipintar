@@ -26,65 +26,274 @@
 
     const riwayatHtml = laporan.length > 0
       ? laporan.map(lap => {
-          const badgeStyle = lap.status === 'Selesai'
-            ? 'background: #e8f5e9; color: #2e7d32;'
-            : 'background: #fff3e0; color: #ef6c00;';
+          const isDone = lap.status === 'Selesai';
           return `
-            <div class="card list-item" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px;">
-              <div>
-                <div style="font-weight: 500;">${lap.tanggal} — Sesi ${lap.sesi}</div>
+            <div class="ios-list-item">
+              <div class="ios-list-icon ${isDone ? 'success' : 'warning'}">
+                <span class="material-icons-outlined" style="font-size: 20px;">${isDone ? 'check_circle' : 'pending'}</span>
               </div>
-              <span class="badge" style="${badgeStyle} padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 500;">${lap.status}</span>
+              <div class="ios-list-content">
+                <div class="ios-list-title">Sesi ${lap.sesi}</div>
+                <div class="ios-list-subtitle">${lap.tanggal}</div>
+              </div>
+              <div class="ios-list-right" style="color: ${isDone ? '#34C759' : '#FF9500'}">
+                ${lap.status}
+              </div>
             </div>
           `;
         }).join('')
-      : '<div class="empty-state" style="text-align:center; color:#999; padding: 24px;">Belum ada riwayat laporan</div>';
+      : '<div class="empty-state">Belum ada riwayat laporan</div>';
 
     const html = `
-      <div class="page piket-dashboard">
-        ${window.Components.header({ title: 'Guru Piket', subtitle: 'SIPINTER', back: true, backPath: '/guru/dashboard' })}
-        <div class="page-content">
-          
-          <div class="card piket-status-banner" style="background: linear-gradient(135deg, #f5b041, #f39c12); color: white; margin-bottom: 1.5rem;">
-            <div style="display: flex; align-items: center; gap: 1rem;">
-              <span class="material-icons-outlined" style="font-size: 2.5rem;">assignment</span>
-              <div>
-                <div style="font-size: 1.2rem; font-weight: bold;">Halaman Piket</div>
-                <div style="opacity: 0.9; font-size: 0.9rem;">Kelola laporan piket harian Anda</div>
-              </div>
-            </div>
-          </div>
-
-          <div class="stat-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
-            <div class="card stat-card" style="text-align: center;">
-              <div class="stat-card-label" style="color: var(--text-secondary, #666); font-size: 0.85rem; margin-bottom: 0.5rem;">Siswa Absen Hari Ini</div>
-              <div class="stat-card-value" style="color: var(--warning, #f39c12); font-size: 2rem; font-weight: bold;">${siswaAbsenHariIni || 0}</div>
-            </div>
-            <div class="card stat-card" style="text-align: center;">
-              <div class="stat-card-label" style="color: var(--text-secondary, #666); font-size: 0.85rem; margin-bottom: 0.5rem;">Total Laporan Saya</div>
-              <div class="stat-card-value" style="color: var(--primary, #1a73e8); font-size: 2rem; font-weight: bold;">${laporan.length}</div>
-            </div>
-          </div>
-
-          <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 2rem;">
-            <button id="btnBuatLaporan" class="btn btn-primary btn-full btn-lg">
-              <span class="material-icons-outlined" style="margin-right: 0.5rem;">edit_document</span>
-              Buat Laporan Baru
-            </button>
-            <button id="btnUnduhLaporan" class="btn btn-outline btn-full btn-lg" style="border-style: dashed; color: var(--primary);">
-              <span class="material-icons-outlined" style="margin-right: 0.5rem;">download</span>
-              Unduh Rekap Laporan
-            </button>
-          </div>
-
-          <div class="section-title" style="margin-bottom: 1rem; font-weight: bold;">Riwayat Laporan Saya</div>
-          <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 2rem;">
-            ${riwayatHtml}
-          </div>
-
+      <style>
+        .ios-page {
+          background: #F2F2F7;
+          min-height: 100vh;
+          padding-bottom: 80px;
+          font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        .ios-nav {
+          padding: 48px 20px 16px;
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          background: rgba(242, 242, 247, 0.8);
+          backdrop-filter: blur(20px);
+          position: sticky;
+          top: 0;
+          z-index: 10;
+        }
+        .ios-back-btn {
+          width: 40px;
+          height: 40px;
+          border-radius: 20px;
+          background: white;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+          color: #007AFF;
+          text-decoration: none;
+          cursor: pointer;
+        }
+        .ios-nav-title {
+          font-size: 28px;
+          font-weight: 800;
+          color: #000;
+          margin: 0;
+          letter-spacing: -0.5px;
+        }
+        .ios-main-card {
+          margin: 8px 20px 24px;
+          border-radius: 24px;
+          background: linear-gradient(135deg, #FF9500 0%, #FF2D55 100%);
+          padding: 24px;
+          color: white;
+          box-shadow: 0 10px 24px rgba(255, 149, 0, 0.3);
+          position: relative;
+          overflow: hidden;
+        }
+        .ios-main-card-bg {
+          position: absolute;
+          right: -20px;
+          top: -20px;
+          width: 150px;
+          height: 150px;
+          background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 70%);
+          border-radius: 50%;
+        }
+        .ios-stat-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 16px;
+          padding: 0 20px;
+          margin-bottom: 24px;
+        }
+        .ios-stat-card {
+          background: white;
+          border-radius: 24px;
+          padding: 20px;
+          box-shadow: 0 4px 16px rgba(0,0,0,0.03);
+          text-align: center;
+        }
+        .ios-stat-value {
+          font-size: 32px;
+          font-weight: 800;
+          color: #000;
+          margin-bottom: 4px;
+        }
+        .ios-stat-label {
+          font-size: 13px;
+          color: #8E8E93;
+          font-weight: 600;
+          text-transform: uppercase;
+        }
+        .ios-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 16px;
+          padding: 0 20px;
+          margin-bottom: 32px;
+        }
+        .ios-action-btn {
+          background: white;
+          border-radius: 24px;
+          padding: 20px 16px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 12px;
+          box-shadow: 0 4px 16px rgba(0,0,0,0.04);
+          color: #1C1C1E;
+          transition: transform 0.2s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.2s;
+          border: none;
+          cursor: pointer;
+        }
+        .ios-action-btn:active {
+          transform: scale(0.95);
+          box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        }
+        .ios-action-icon {
+          width: 48px;
+          height: 48px;
+          border-radius: 16px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .ios-action-icon.orange { background: #FFF0E5; color: #FF9500; }
+        .ios-action-icon.green { background: #E4F8EB; color: #34C759; }
+        
+        .ios-action-label {
+          font-size: 14px;
+          font-weight: 600;
+          text-align: center;
+        }
+        
+        .ios-section-header {
+          padding: 0 20px 12px;
+          font-size: 20px;
+          font-weight: 700;
+          color: #000;
+          letter-spacing: -0.3px;
+        }
+        .ios-list {
+          margin: 0 20px;
+          background: white;
+          border-radius: 20px;
+          overflow: hidden;
+          box-shadow: 0 4px 16px rgba(0,0,0,0.03);
+        }
+        .ios-list-item {
+          display: flex;
+          align-items: center;
+          padding: 16px;
+          position: relative;
+        }
+        .ios-list-item:not(:last-child)::after {
+          content: '';
+          position: absolute;
+          bottom: 0;
+          left: 64px;
+          right: 0;
+          height: 1px;
+          background: #E5E5EA;
+        }
+        .ios-list-icon {
+          width: 36px;
+          height: 36px;
+          border-radius: 10px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin-right: 16px;
+        }
+        .ios-list-icon.success { background: #E4F8EB; color: #34C759; }
+        .ios-list-icon.warning { background: #FFF5E5; color: #FF9500; }
+        
+        .ios-list-content {
+          flex: 1;
+        }
+        .ios-list-title {
+          font-size: 15px;
+          font-weight: 600;
+          color: #000;
+          margin-bottom: 2px;
+        }
+        .ios-list-subtitle {
+          font-size: 13px;
+          color: #8E8E93;
+        }
+        .ios-list-right {
+          font-size: 13px;
+          font-weight: 600;
+        }
+        .empty-state {
+          padding: 32px 16px;
+          text-align: center;
+          color: #8E8E93;
+          font-size: 14px;
+        }
+      </style>
+      <div class="page ios-page">
+        
+        <div class="ios-nav">
+          <a class="ios-back-btn" onclick="window.Router.navigate('/guru/dashboard')">
+            <span class="material-icons-outlined">arrow_back</span>
+          </a>
+          <h1 class="ios-nav-title">Guru Piket</h1>
         </div>
+
+        <!-- Banner Card -->
+        <div class="ios-main-card">
+          <div class="ios-main-card-bg"></div>
+          <div style="position: relative; z-index: 1; display: flex; align-items: center; gap: 16px;">
+            <div style="width: 52px; height: 52px; border-radius: 16px; background: rgba(255,255,255,0.2); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center;">
+              <span style="font-size: 28px;">📋</span>
+            </div>
+            <div>
+              <div style="font-size: 20px; font-weight: 700; margin-bottom: 2px;">Kelola Piket</div>
+              <div style="font-size: 14px; opacity: 0.9;">Buat & pantau laporan harian</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stat Grid -->
+        <div class="ios-stat-grid">
+          <div class="ios-stat-card">
+            <div class="ios-stat-value" style="color: #FF3B30;">${siswaAbsenHariIni || 0}</div>
+            <div class="ios-stat-label">Absen Hari Ini</div>
+          </div>
+          <div class="ios-stat-card">
+            <div class="ios-stat-value" style="color: #007AFF;">${laporan.length}</div>
+            <div class="ios-stat-label">Total Laporan</div>
+          </div>
+        </div>
+
+        <!-- Action Widgets -->
+        <div class="ios-grid">
+          <button class="ios-action-btn" id="btnBuatLaporan">
+            <div class="ios-action-icon orange">
+              <span style="font-size: 28px;">📝</span>
+            </div>
+            <div class="ios-action-label">Buat<br/>Laporan Baru</div>
+          </button>
+          
+          <button class="ios-action-btn" id="btnUnduhLaporan">
+            <div class="ios-action-icon green">
+              <span style="font-size: 28px;">📥</span>
+            </div>
+            <div class="ios-action-label">Unduh<br/>Rekap Excel</div>
+          </button>
+        </div>
+
+        <!-- History List -->
+        <div class="ios-section-header">Riwayat Laporan Saya</div>
+        <div class="ios-list">
+          ${riwayatHtml}
+        </div>
+
         ${window.Components.bottomNavGuru ? window.Components.bottomNavGuru('piket') : ''}
-        ${window.Components.footer ? window.Components.footer() : ''}
       </div>
     `;
     window.Components.renderPage(html);
