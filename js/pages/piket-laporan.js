@@ -4,101 +4,317 @@
   let blockCounter = 0;
   
   async function render() {
-    const headerHtml = window.Components.header({ 
-      title: 'Laporan Piket', 
-      subtitle: 'Input Laporan Baru', 
-      back: true, 
-      backPath: '/guru/dashboard' 
-    });
+    window.Components.showLoading();
     
-    const hariTanggal = await window.APP_DATA.getHariTanggal();
+    const guru = window.APP_STATE.currentGuru || {};
+    const namaGuru = guru.nama || 'Guru';
+    const nameParts = namaGuru.trim().split(' ');
+    const initials = nameParts.length > 1 
+      ? (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase() 
+      : namaGuru.substring(0, 2).toUpperCase();
+      
+    const hariTanggal = window.APP_DATA.getHariTanggal ? await window.APP_DATA.getHariTanggal() : 'Senin, 1 Januari 2026';
     kelasList = await window.APP_DATA.getAllKelas();
     
     const { data: guruData } = await window.supabase.from('profiles').select('*').eq('role', 'guru').order('nama');
     allGuru = guruData || [];
 
+    window.Components.hideLoading();
+
     const html = `
-      ${headerHtml}
-      <div class="page with-header">
-        <div class="p-4 pb-24">
-          <div class="card mb-4">
-            <div class="card-header bg-primary text-white" style="border-radius: var(--radius-xl) var(--radius-xl) 0 0; padding: 16px;">
-              <h2 style="font-size: 16px; margin: 0;">Form Laporan Absensi</h2>
-              <p style="margin: 4px 0 0 0; opacity: 0.9; font-size: 13px;">${hariTanggal}</p>
-            </div>
-            
-            <div class="p-4">
-              <form id="piket-form">
-                
-                <!-- Petugas Piket -->
-                <div class="form-group mb-4" style="background: #f8f9fa; padding: 12px; border-radius: 8px; border: 1px solid var(--border);">
-                  <label class="form-label" style="font-weight: 600;">Petugas Piket 1</label>
-                  <select id="petugas-1" class="form-input mb-3" required>
-                    <option value="" disabled selected>-- Pilih Petugas 1 --</option>
-                    ${allGuru.map(g => `<option value="${g.id}">${g.nama}</option>`).join('')}
-                  </select>
-                  
-                  <label class="form-label" style="font-weight: 600;">Petugas Piket 2</label>
-                  <select id="petugas-2" class="form-input" required>
-                    <option value="" disabled selected>-- Pilih Petugas 2 --</option>
-                    ${allGuru.map(g => `<option value="${g.id}">${g.nama}</option>`).join('')}
-                  </select>
-                </div>
+      <style>
+        .ios-page {
+          background: #F2F2F7;
+          min-height: 100vh;
+          padding-bottom: 80px;
+          font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        .ios-nav {
+          padding: 48px 20px 16px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          background: rgba(242, 242, 247, 0.8);
+          backdrop-filter: blur(20px);
+          position: sticky;
+          top: 0;
+          z-index: 10;
+        }
+        .ios-nav-left {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+        .ios-back-btn {
+          width: 40px;
+          height: 40px;
+          border-radius: 20px;
+          background: white;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+          color: #007AFF;
+          text-decoration: none;
+          cursor: pointer;
+        }
+        .ios-nav-title {
+          font-size: 24px;
+          font-weight: 800;
+          color: #000;
+          margin: 0;
+          letter-spacing: -0.5px;
+        }
+        .ios-avatar {
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          background: #E5E5EA;
+          color: #1C1C1E;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: 700;
+          font-size: 16px;
+        }
+        
+        .ios-form-group {
+          margin: 0 20px 24px;
+        }
+        .ios-form-label {
+          display: block;
+          font-size: 14px;
+          font-weight: 600;
+          color: #8E8E93;
+          text-transform: uppercase;
+          margin-bottom: 8px;
+          margin-left: 12px;
+        }
+        .ios-form-card {
+          background: white;
+          border-radius: 16px;
+          padding: 16px;
+          box-shadow: 0 2px 12px rgba(0,0,0,0.03);
+        }
+        .ios-input {
+          width: 100%;
+          background: #F2F2F7;
+          border: none;
+          border-radius: 10px;
+          padding: 14px 16px;
+          font-size: 16px;
+          font-family: inherit;
+          color: #000;
+          outline: none;
+          appearance: none;
+        }
+        .ios-input:focus {
+          box-shadow: 0 0 0 2px rgba(0,122,255,0.3);
+        }
+        
+        .ios-radio-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 12px;
+        }
+        .ios-radio-card {
+          position: relative;
+        }
+        .ios-radio-card input {
+          display: none;
+        }
+        .ios-radio-card label {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          background: #F2F2F7;
+          border-radius: 12px;
+          padding: 14px;
+          font-size: 16px;
+          font-weight: 600;
+          color: #8E8E93;
+          cursor: pointer;
+          transition: 0.2s;
+        }
+        .ios-radio-card input:checked + label {
+          background: #FF9500;
+          color: white;
+          box-shadow: 0 4px 12px rgba(255, 149, 0, 0.3);
+        }
+        
+        .ios-btn-primary {
+          background: #007AFF;
+          color: white;
+          border: none;
+          border-radius: 14px;
+          padding: 16px;
+          font-size: 17px;
+          font-weight: 700;
+          width: 100%;
+          cursor: pointer;
+          transition: 0.2s;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          box-shadow: 0 4px 16px rgba(0,122,255,0.2);
+        }
+        .ios-btn-primary:active {
+          transform: scale(0.96);
+        }
+        .ios-btn-outline {
+          background: transparent;
+          color: #007AFF;
+          border: 2px dashed #007AFF;
+          border-radius: 14px;
+          padding: 14px;
+          font-size: 16px;
+          font-weight: 600;
+          width: 100%;
+          cursor: pointer;
+          transition: 0.2s;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+        }
+        .ios-btn-outline:active {
+          transform: scale(0.96);
+          background: rgba(0,122,255,0.05);
+        }
+        
+        .kelas-block {
+          background: white;
+          border-radius: 16px;
+          padding: 16px;
+          margin-bottom: 16px;
+          box-shadow: 0 2px 12px rgba(0,0,0,0.03);
+          border: 1px solid #E5E5EA;
+        }
+        .siswa-list {
+          margin-top: 12px;
+          background: #F2F2F7;
+          border-radius: 12px;
+          padding: 8px;
+          max-height: 250px;
+          overflow-y: auto;
+        }
+        .absen-item {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 8px 12px;
+          background: white;
+          border-radius: 8px;
+          margin-bottom: 8px;
+        }
+        .absen-item:last-child {
+          margin-bottom: 0;
+        }
+      </style>
+      
+      <div class="page ios-page">
+        <!-- Header -->
+        <div class="ios-nav">
+          <div class="ios-nav-left">
+            <a class="ios-back-btn" onclick="window.Router.navigate('/guru/piket')">
+              <span class="material-icons-outlined">arrow_back</span>
+            </a>
+            <h1 class="ios-nav-title">Laporan Piket</h1>
+          </div>
+          <div class="ios-avatar">${initials}</div>
+        </div>
+        
+        <div style="padding: 0 24px 16px;">
+          <div style="font-size: 14px; color: #8E8E93; font-weight: 600; text-transform: uppercase;">${hariTanggal}</div>
+        </div>
 
-                <!-- Sesi Piket -->
-                <div class="form-group mb-4">
-                  <label class="form-label" style="font-weight: 600;">Sesi Piket</label>
-                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                    <div class="radio-card">
-                      <input type="radio" name="sesi" id="sesi-pagi" value="Pagi" checked>
-                      <label for="sesi-pagi">
-                        <span class="material-icons-outlined">wb_sunny</span>
-                        <span>Pagi</span>
-                      </label>
-                    </div>
-                    <div class="radio-card">
-                      <input type="radio" name="sesi" id="sesi-siang" value="Siang">
-                      <label for="sesi-siang">
-                        <span class="material-icons-outlined">wb_twilight</span>
-                        <span>Siang</span>
-                      </label>
-                    </div>
-                  </div>
-                </div>
-
-                <hr style="margin: 24px 0; border: none; border-top: 1px dashed var(--border);" />
-
-                <!-- Container Multi-Kelas -->
-                <div id="kelas-blocks-container">
-                  <!-- Kelas blocks will be appended here -->
-                </div>
-
-                <button type="button" id="btn-add-kelas" class="btn btn-outline btn-full mb-4" style="border-style: dashed; padding: 12px;">
-                  <span class="material-icons-outlined" style="margin-right: 8px;">add_circle_outline</span>
-                  Tambah Kelas
-                </button>
-
-                <!-- Catatan -->
-                <div class="form-group mb-4 mt-4">
-                  <label class="form-label" style="font-weight: 600;">Catatan Umum</label>
-                  <textarea id="catatan" class="form-input" rows="3" placeholder="Tuliskan catatan kejadian penting selama piket..." required></textarea>
-                </div>
-                
-                <button type="submit" id="btn-simpan" class="btn btn-primary btn-full btn-lg mt-4">Simpan Laporan</button>
-              </form>
+        <form id="piket-form">
+          <!-- Petugas Piket -->
+          <div class="ios-form-group">
+            <label class="ios-form-label">Petugas Piket</label>
+            <div class="ios-form-card">
+              <div style="margin-bottom: 12px;">
+                <div style="font-size: 13px; font-weight: 600; color: #8E8E93; margin-bottom: 4px;">Petugas 1</div>
+                <select id="petugas-1" class="ios-input" required>
+                  <option value="" disabled selected>-- Pilih Petugas 1 --</option>
+                  ${allGuru.map(g => `<option value="${g.id}">${g.nama}</option>`).join('')}
+                </select>
+              </div>
+              <div>
+                <div style="font-size: 13px; font-weight: 600; color: #8E8E93; margin-bottom: 4px;">Petugas 2</div>
+                <select id="petugas-2" class="ios-input" required>
+                  <option value="" disabled selected>-- Pilih Petugas 2 --</option>
+                  ${allGuru.map(g => `<option value="${g.id}">${g.nama}</option>`).join('')}
+                </select>
+              </div>
             </div>
           </div>
-        </div>
+
+          <!-- Sesi Piket -->
+          <div class="ios-form-group">
+            <label class="ios-form-label">Sesi</label>
+            <div class="ios-radio-grid">
+              <div class="ios-radio-card">
+                <input type="radio" name="sesi" id="sesi-pagi" value="Pagi" checked>
+                <label for="sesi-pagi">
+                  <span style="font-size: 20px;">☀️</span> Pagi
+                </label>
+              </div>
+              <div class="ios-radio-card">
+                <input type="radio" name="sesi" id="sesi-siang" value="Siang">
+                <label for="sesi-siang">
+                  <span style="font-size: 20px;">🌇</span> Siang
+                </label>
+              </div>
+            </div>
+          </div>
+          
+          <div style="margin: 32px 20px 24px; text-align: center; border-bottom: 1px solid #E5E5EA;"></div>
+
+          <!-- Container Kelas -->
+          <div class="ios-form-group">
+            <label class="ios-form-label" style="display: flex; justify-content: space-between; align-items: center;">
+              Laporan Kelas
+              <span style="font-size: 11px; color: #FF3B30; font-weight: 700;">*HANYA SISWA ABSEN</span>
+            </label>
+            
+            <div id="kelas-blocks-container">
+              <!-- Dynamically injected class blocks -->
+            </div>
+            
+            <button type="button" id="btn-add-kelas" class="ios-btn-outline">
+              <span class="material-icons-outlined">add</span>
+              Tambah Kelas
+            </button>
+          </div>
+
+          <!-- Catatan -->
+          <div class="ios-form-group">
+            <label class="ios-form-label">Catatan Kejadian</label>
+            <div class="ios-form-card">
+              <textarea id="catatan" class="ios-input" rows="4" style="background: transparent; padding: 0;" placeholder="Contoh: Belum ada guru pengganti di kelas XI, anak-anak kondusif." required></textarea>
+            </div>
+          </div>
+          
+          <div style="padding: 0 20px 40px;">
+            <button type="submit" id="btn-simpan" class="ios-btn-primary">
+              <span class="material-icons-outlined">save</span>
+              Simpan Laporan
+            </button>
+          </div>
+        </form>
       </div>
     `;
     
     window.Components.renderPage(html);
     
     // Auto set Petugas 1 to current user
-    if (window.APP_STATE?.currentGuru?.id) {
+    if (guru.id) {
       setTimeout(() => {
         const p1 = document.getElementById('petugas-1');
-        if (p1) p1.value = window.APP_STATE.currentGuru.id;
+        if (p1) p1.value = guru.id;
       }, 100);
     }
     
@@ -113,22 +329,22 @@
     const blockId = `kelas-block-${blockCounter}`;
     
     const blockHtml = `
-      <div id="${blockId}" class="kelas-block mb-4" style="border: 1px solid var(--primary); border-radius: 8px; padding: 12px; background: #fff;">
-        ${blockCounter > 1 ? `
-        <div style="display: flex; justify-content: flex-end; margin-bottom: 8px;">
-          <button type="button" class="btn-remove-block" data-target="${blockId}" style="background:none; border:none; color: var(--error); cursor:pointer;"><span class="material-icons-outlined">delete</span></button>
-        </div>` : ''}
+      <div id="${blockId}" class="kelas-block">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <div style="font-weight: 700; color: #1C1C1E;">Kelas ${blockCounter}</div>
+          ${blockCounter > 1 ? `
+          <button type="button" class="btn-remove-block" data-target="${blockId}" style="background:none; border:none; color: #FF3B30; padding: 4px; border-radius: 50%; display: flex; align-items: center; cursor: pointer;">
+            <span class="material-icons-outlined">close</span>
+          </button>` : ''}
+        </div>
         
-        <select class="form-input select-kelas-dinamis" data-block="${blockId}" required>
+        <select class="ios-input select-kelas-dinamis" data-block="${blockId}" required>
           <option value="" disabled selected>-- Pilih Kelas --</option>
           ${kelasList.map(k => `<option value="${k.id}">${k.nama}</option>`).join('')}
         </select>
         
-        <div class="siswa-container mt-3" id="siswa-container-${blockId}" style="display: none;">
-          <p style="font-size: 13px; color: var(--error); margin-bottom: 8px; font-weight: 500;">
-            * Centang nama siswa yang TIDAK HADIR
-          </p>
-          <div class="siswa-list" id="siswa-list-${blockId}" style="max-height: 300px; overflow-y: auto; border: 1px solid var(--border); border-radius: 4px; padding: 8px; background: #fafafa;">
+        <div class="siswa-container" id="siswa-container-${blockId}" style="display: none; margin-top: 12px;">
+          <div class="siswa-list" id="siswa-list-${blockId}">
             <!-- Checkboxes will be injected here -->
           </div>
         </div>
@@ -148,29 +364,32 @@
       const container = document.getElementById(`siswa-container-${blockId}`);
       const list = document.getElementById(`siswa-list-${blockId}`);
       
+      list.innerHTML = '<div style="text-align:center; padding: 12px; color: #8E8E93; font-size: 13px;">Memuat siswa...</div>';
       container.style.display = 'block';
-      list.innerHTML = '<div style="text-align:center; font-size:12px; color:#666;">Memuat data siswa...</div>';
       
-      const siswa = await window.APP_DATA.getSiswaByKelas(kelasId);
-      
-      if (!siswa || siswa.length === 0) {
-        list.innerHTML = '<div style="text-align:center; font-size:12px; color:#666;">Data siswa kosong.</div>';
+      const { data: siswaData, error } = await window.supabase
+        .from('siswa')
+        .select('id, nama')
+        .eq('kelas_id', kelasId)
+        .order('nama');
+        
+      if (error || !siswaData || siswaData.length === 0) {
+        list.innerHTML = '<div style="text-align:center; padding: 12px; color: #8E8E93; font-size: 13px;">Tidak ada data siswa</div>';
         return;
       }
       
-      list.innerHTML = siswa.map((nama, idx) => `
-        <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 4px; border-bottom: 1px solid #eee;">
-          <label style="display: flex; align-items: center; cursor: pointer; flex: 1;">
-            <input type="checkbox" class="absen-checkbox" data-nama="${nama}" data-kelas="${kelasId}" data-idx="${idx}" style="margin-right: 12px; transform: scale(1.2);" onchange="document.getElementById('status-container-${blockId}-${idx}').style.display = this.checked ? 'block' : 'none'">
-            <span style="font-size: 14px;">${nama}</span>
+      list.innerHTML = siswaData.map((s, idx) => `
+        <div class="absen-item">
+          <label style="display: flex; align-items: center; gap: 12px; flex: 1; font-size: 14px; font-weight: 500; cursor: pointer;">
+            <input type="checkbox" class="absen-checkbox" data-nama="${s.nama}" data-kelas="${kelasId}" data-idx="${idx}" style="width: 18px; height: 18px; accent-color: #FF3B30;">
+            ${s.nama}
           </label>
-          <div id="status-container-${blockId}-${idx}" style="display: none;">
-            <select class="form-input absen-status" id="status-${blockId}-${idx}" style="padding: 4px; font-size: 12px; width: auto;">
-              <option value="Alpha">A (Alpha)</option>
-              <option value="Izin">I (Izin)</option>
-              <option value="Sakit">S (Sakit)</option>
-            </select>
-          </div>
+          <select id="status-${blockId}-${idx}" class="ios-input" style="width: 100px; padding: 6px 8px; font-size: 13px; background: #F2F2F7;">
+            <option value="Sakit">Sakit</option>
+            <option value="Izin">Izin</option>
+            <option value="Alpa" selected>Alpa</option>
+            <option value="Dispensasi">Dispensasi</option>
+          </select>
         </div>
       `).join('');
     });
@@ -195,7 +414,7 @@
       }
       
       const btnSimpan = document.getElementById('btn-simpan');
-      btnSimpan.innerHTML = 'Menyimpan...';
+      btnSimpan.innerHTML = '<span class="material-icons-outlined" style="animation: spin 1s linear infinite;">refresh</span> Menyimpan...';
       btnSimpan.disabled = true;
 
       try {
@@ -230,7 +449,7 @@
       } catch (error) {
         console.error(error);
         window.Components.toast(error.message || 'Gagal menyimpan laporan', 'error');
-        btnSimpan.innerHTML = 'Simpan Laporan';
+        btnSimpan.innerHTML = '<span class="material-icons-outlined">save</span> Simpan Laporan';
         btnSimpan.disabled = false;
       }
     });

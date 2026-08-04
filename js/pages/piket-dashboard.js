@@ -3,6 +3,13 @@
     window.Components.showLoading();
     const guru = window.APP_STATE.currentGuru || {};
     const guruId = guru.id;
+    
+    // Fix Avatar Initials
+    const namaGuru = guru.nama || 'Guru';
+    const nameParts = namaGuru.trim().split(' ');
+    const initials = nameParts.length > 1 
+      ? (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase() 
+      : namaGuru.substring(0, 2).toUpperCase();
 
     // Fetch riwayat laporan milik guru ini dari Supabase
     const { data: laporanList } = await window.supabase
@@ -56,12 +63,17 @@
           padding: 48px 20px 16px;
           display: flex;
           align-items: center;
-          gap: 16px;
+          justify-content: space-between;
           background: rgba(242, 242, 247, 0.8);
           backdrop-filter: blur(20px);
           position: sticky;
           top: 0;
           z-index: 10;
+        }
+        .ios-nav-left {
+          display: flex;
+          align-items: center;
+          gap: 12px;
         }
         .ios-back-btn {
           width: 40px;
@@ -82,6 +94,18 @@
           color: #000;
           margin: 0;
           letter-spacing: -0.5px;
+        }
+        .ios-avatar {
+          width: 44px;
+          height: 44px;
+          border-radius: 50%;
+          background: #E5E5EA;
+          color: #1C1C1E;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: 700;
+          font-size: 16px;
         }
         .ios-main-card {
           margin: 8px 20px 24px;
@@ -238,10 +262,13 @@
       <div class="page ios-page">
         
         <div class="ios-nav">
-          <a class="ios-back-btn" onclick="window.Router.navigate('/guru/dashboard')">
-            <span class="material-icons-outlined">arrow_back</span>
-          </a>
-          <h1 class="ios-nav-title">Guru Piket</h1>
+          <div class="ios-nav-left">
+            <a class="ios-back-btn" onclick="window.Router.navigate('/guru/dashboard')">
+              <span class="material-icons-outlined">arrow_back</span>
+            </a>
+            <h1 class="ios-nav-title">Guru Piket</h1>
+          </div>
+          <div class="ios-avatar">${initials}</div>
         </div>
 
         <!-- Banner Card -->
