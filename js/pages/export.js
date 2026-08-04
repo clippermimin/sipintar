@@ -248,9 +248,16 @@
         const rows = [];
 
         data.forEach(laporan => {
-          // In latest version, 'catatan' string contains Petugas names
-          const petugas = laporan.catatan.includes('[Petugas') ? 'Guru Piket' : (laporan.profiles?.nama || '-');
-          const catatanStr = laporan.catatan || '-';
+          let petugas = laporan.profiles?.nama || '-';
+          let catatanStr = laporan.catatan || '-';
+          
+          const petugasMatch = catatanStr.match(/^\[(.*?)\]\s*/);
+          if (petugasMatch) {
+            // Remove "Petugas 1: " and "Petugas 2: " to get just the names
+            petugas = petugasMatch[1].replace(/Petugas \d+:\s/g, '');
+            // Remove the [Petugas...] prefix from the catatan string
+            catatanStr = catatanStr.substring(petugasMatch[0].length) || '-';
+          }
           const absensi = laporan.absensi_piket || [];
           
           if (absensi.length === 0) {
