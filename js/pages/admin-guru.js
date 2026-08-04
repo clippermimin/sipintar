@@ -298,7 +298,7 @@
             <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; margin-bottom: 16px; font-size: 13px; color: #475569;">
               <strong>Cara Import:</strong> Copy tabel dari Excel yang berisi dua kolom (Kolom 1: NIP, Kolom 2: Nama Guru), lalu paste ke kotak di bawah ini.
             </div>
-            <textarea id="importText" style="width: 100%; height: 200px; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; font-family: monospace; font-size: 13px; box-sizing: border-box; white-space: pre;" placeholder="19800101\\tBudi Santoso\\n19900202\\tSiti Aminah" required></textarea>
+            <textarea id="importText" style="width: 100%; height: 200px; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; font-family: monospace; font-size: 13px; box-sizing: border-box; white-space: pre;" placeholder="19800101\tBudi Santoso\n19900202\tSiti Aminah" required></textarea>
             <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 16px;">
               <button type="button" class="btn-batal-import" style="padding: 10px 20px; border-radius: 8px; border: 1px solid #d1d5db; background: white; cursor: pointer;">Batal</button>
               <button type="submit" class="btn btn-primary" style="padding: 10px 20px; border-radius: 8px; border: none; background: #2563eb; color: white; cursor: pointer;">Proses Import</button>
@@ -374,10 +374,10 @@
       } else {
         try {
           const pwd = pwdInput.length >= 6 ? pwdInput : data.nip; // default to NIP
-          const response = await fetch(\`\${window.supabaseUrl}/auth/v1/signup\`, {
+          const response = await fetch(`${window.supabaseUrl}/auth/v1/signup`, {
             method: 'POST',
             headers: { 'apikey': window.supabaseKey, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: \`\${data.nip}@sipintar.com\`, password: pwd })
+            body: JSON.stringify({ email: `${data.nip}@sipintar.com`, password: pwd })
           });
 
           const authData = await response.json();
@@ -398,7 +398,7 @@
 
       if (error) {
         console.error(error);
-        window.Components.toast(\`Gagal menyimpan: \${error.message}\`, 'error');
+        window.Components.toast(`Gagal menyimpan: ${error.message}`, 'error');
       } else {
         window.Components.toast('Berhasil disimpan');
         modalGuru.classList.add('hidden');
@@ -416,7 +416,7 @@
       submitBtn.innerText = 'Memproses...';
       submitBtn.disabled = true;
       
-      const rows = text.split('\\n');
+      const rows = text.split('\n');
       let successCount = 0;
       let failCount = 0;
       
@@ -424,17 +424,17 @@
         const row = rows[i].trim();
         if (!row) continue;
         
-        const cols = row.split('\\t');
+        const cols = row.split('\t');
         if (cols.length >= 2) {
           const nip = cols[0].trim();
           const nama = cols[1].trim();
           
           if (nip && nama) {
              try {
-                const response = await fetch(\`\${window.supabaseUrl}/auth/v1/signup\`, {
+                const response = await fetch(`${window.supabaseUrl}/auth/v1/signup`, {
                   method: 'POST',
                   headers: { 'apikey': window.supabaseKey, 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ email: \`\${nip}@sipintar.com\`, password: nip })
+                  body: JSON.stringify({ email: `${nip}@sipintar.com`, password: nip })
                 });
                 const authData = await response.json();
                 if (response.ok) {
@@ -459,14 +459,14 @@
       document.getElementById('importText').value = '';
       document.getElementById('modalImport').classList.add('hidden');
       
-      window.Components.toast(\`Import Selesai: \${successCount} sukses, \${failCount} gagal\`);
+      window.Components.toast(`Import Selesai: ${successCount} sukses, ${failCount} gagal`);
       fetchAndRenderList();
     });
 
     document.getElementById('btnBulkDelete').addEventListener('click', async () => {
       const checked = document.querySelectorAll('.row-checkbox:checked');
       if (checked.length === 0) return;
-      if (!confirm(\`Yakin ingin menghapus \${checked.length} guru?\`)) return;
+      if (!confirm(`Yakin ingin menghapus ${checked.length} guru?`)) return;
       
       const ids = Array.from(checked).map(cb => cb.value);
       const btn = document.getElementById('btnBulkDelete');
@@ -479,7 +479,7 @@
       if (error) {
         window.Components.toast('Gagal menghapus data massal', 'error');
       } else {
-        window.Components.toast(\`\${checked.length} guru berhasil dihapus\`);
+        window.Components.toast(`${checked.length} guru berhasil dihapus`);
         document.getElementById('checkAll').checked = false;
         fetchAndRenderList();
       }
