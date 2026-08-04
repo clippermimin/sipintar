@@ -45,44 +45,24 @@
         <div class="admin-content" style="flex: 1; margin-left: 260px; padding: 24px; min-height: 100vh; background: #f8f9fa;">
           ${content}
         </div>
-        
-        <!-- Modal Form Guru -->
-        <div id="modalGuru" class="modal-overlay hidden" style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; display: none; align-items: center; justify-content: center;">
-          <div style="background: white; width: 100%; max-width: 400px; border-radius: 12px; padding: 24px;">
-            <h3 id="modalTitle" style="margin-top: 0;">Tambah Guru</h3>
-            <form id="formGuru">
-              <input type="hidden" id="guruId">
-              <div class="form-group mb-3">
-                <label class="form-label">Nama Lengkap</label>
-                <input type="text" id="guruNama" class="form-input" required>
-              </div>
-              <div class="form-group mb-3">
-                <label class="form-label">NIP (Nomor Induk Pegawai)</label>
-                <input type="text" id="guruNip" class="form-input" required pattern="[0-9]+" title="Hanya angka diperbolehkan">
-              </div>
-              <div class="form-group mb-4" id="formGroupPassword">
-                <label class="form-label">Password</label>
-                <div style="position: relative;">
-                  <input type="password" id="guruPassword" class="form-input" placeholder="Minimal 6 karakter" minlength="6" style="padding-right: 40px;">
-                  <button type="button" id="toggle-guru-password" style="position: absolute; right: 12px; top: 10px; background: none; border: none; cursor: pointer; color: #666; display: flex; padding: 0;">
-                    <span class="material-icons-outlined" id="toggle-guru-password-icon" style="font-size: 20px;">visibility_off</span>
-                  </button>
-                </div>
-              </div>
-              <div style="display: flex; gap: 12px; justify-content: flex-end;">
-                <button type="button" id="btnBatal" class="btn btn-outline">Batal</button>
-                <button type="submit" class="btn btn-primary">Simpan</button>
-              </div>
-            </form>
-          </div>
-        </div>
-
         <style>
-          .admin-page { display: flex; min-height: 100vh; }
+          .admin-page { display: flex; min-height: 100vh; font-family: 'Inter', sans-serif; }
           .admin-sidebar-item { display: flex; align-items: center; gap: 12px; padding: 12px 24px; color: #5f6368; text-decoration: none; font-weight: 500; transition: background 0.2s; }
           .admin-sidebar-item:hover { background: #f1f3f4; color: #1a73e8; }
           .admin-sidebar-item.active { background: #e8f0fe; color: #1a73e8; border-right: 4px solid #1a73e8; }
           .modal-overlay:not(.hidden) { display: flex !important; }
+          
+          .mutqin-table { width: 100%; border-collapse: collapse; }
+          .mutqin-table th { padding: 16px; text-align: left; font-size: 13px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #f3f4f6; }
+          .mutqin-table td { padding: 16px; border-bottom: 1px solid #f3f4f6; font-size: 14px; vertical-align: middle; }
+          .mutqin-table tr:hover { background-color: #f9fafb; }
+          .mutqin-checkbox { width: 18px; height: 18px; border-radius: 4px; border: 1px solid #d1d5db; cursor: pointer; }
+          
+          .kelas-badge { display: inline-block; padding: 4px 12px; border-radius: 999px; background: #e0f2fe; color: #0369a1; font-weight: 600; font-size: 13px; }
+          .action-btn { background: white; border: 1px solid #e5e7eb; padding: 6px; border-radius: 6px; color: #6b7280; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+          .action-btn:hover { background: #f3f4f6; color: #111827; }
+          .action-btn.del-btn:hover { color: #ef4444; border-color: #fca5a5; background: #fef2f2; }
+
           @media (min-width: 769px) { .admin-mobile-header { display: none !important; } #adminDrawerOverlay { display: none !important; } #btnCloseDrawer { display: none !important; } }
           @media (max-width: 768px) { .admin-page { flex-direction: column; } .admin-content { margin-left: 0 !important; padding: 16px !important; } .admin-sidebar { transform: translateX(-100%); } .admin-sidebar.open { transform: translateX(0); } }
         </style>
@@ -90,96 +70,242 @@
     `;
   }
   
+  let globalGuru = [];
+  let currentSort = { column: 'nama', direction: 'asc' };
+  
   async function fetchAndRenderList() {
-    const container = document.getElementById('guruListContainer');
+    const container = document.getElementById('guruTableBody');
     if (!container) return;
     
     const { data: guruList, error } = await window.supabase
       .from('profiles')
       .select('*')
-      .eq('role', 'guru')
-      .order('nama');
+      .eq('role', 'guru');
       
     if (error) {
-      container.innerHTML = '<p style="color: red;">Gagal memuat data guru</p>';
+      console.error(error);
+      container.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 24px; color:red;">Gagal memuat data guru</td></tr>';
       return;
     }
     
-    document.getElementById('guruCountBadge').innerText = `${(guruList||[]).length} Guru`;
+    globalGuru = guruList || [];
+    renderTable();
+  }
+
+  function renderTable() {
+    const container = document.getElementById('guruTableBody');
+    if (!container) return;
+
+    const filterText = document.getElementById('searchGuru').value.toLowerCase();
     
-    let guruHtml = (guruList || []).map(g => `
-      <div class="card" style="background: white; padding: 16px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 16px; margin-bottom: 12px;">
-        <div class="avatar" style="width: 48px; height: 48px; border-radius: 50%; background: #e3f2fd; color: #1976d2; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px;">
-          ${g.nama.substring(0, 2).toUpperCase()}
-        </div>
-        <div style="flex: 1;">
-          <div style="font-weight: 500; font-size: 16px; color: #333;">${g.nama}</div>
-          <div style="font-size: 13px; color: #666; margin-top: 4px;">NIP: ${g.nip || '-'}</div>
-        </div>
-        <button class="btn btn-outline edit-btn" data-id="${g.id}" data-nama="${g.nama}" data-nip="${g.nip || ''}" style="padding: 6px 12px; border: 1px solid #1a73e8; color: #1a73e8; border-radius: 6px; background: white; cursor: pointer;">Edit</button>
-        <button class="btn btn-outline del-btn" data-id="${g.id}" style="padding: 6px 12px; border: 1px solid #ea4335; color: #ea4335; border-radius: 6px; background: white; cursor: pointer;">Hapus</button>
-      </div>
+    let filtered = globalGuru.filter(g => {
+      const matchName = (g.nama || '').toLowerCase().includes(filterText);
+      const matchNip = (g.nip || '').toLowerCase().includes(filterText);
+      return matchName || matchNip;
+    });
+
+    filtered.sort((a, b) => {
+      let valA = currentSort.column === 'nama' ? (a.nama || '').toLowerCase() : (a.nip || '').toLowerCase();
+      let valB = currentSort.column === 'nama' ? (b.nama || '').toLowerCase() : (b.nip || '').toLowerCase();
+      
+      if (valA < valB) return currentSort.direction === 'asc' ? -1 : 1;
+      if (valA > valB) return currentSort.direction === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    // Update sort icons
+    const thNamaIcon = document.getElementById('thNama').querySelector('.sort-icon');
+    const thNipIcon = document.getElementById('thNip').querySelector('.sort-icon');
+    if (thNamaIcon) thNamaIcon.innerHTML = currentSort.column === 'nama' ? (currentSort.direction === 'asc' ? '↑' : '↓') : '';
+    if (thNipIcon) thNipIcon.innerHTML = currentSort.column === 'nip' ? (currentSort.direction === 'asc' ? '↑' : '↓') : '';
+
+    document.getElementById('guruCountBadge').innerText = `${filtered.length} guru terdaftar`;
+
+    if (filtered.length === 0) {
+      container.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 32px; color:#999;">Tidak ada data guru ditemukan.</td></tr>';
+      return;
+    }
+
+    container.innerHTML = filtered.map((g, i) => `
+      <tr>
+        <td style="width: 40px;"><input type="checkbox" class="mutqin-checkbox row-checkbox" value="${g.id}"></td>
+        <td style="width: 50px; color: #888;">${i + 1}</td>
+        <td><div style="font-weight: 600; color: #202124;">${g.nama || '-'}</div></td>
+        <td><div class="kelas-badge">${g.nip || '-'}</div></td>
+        <td style="width: 120px;">
+          <div style="display: flex; gap: 8px;">
+            <button class="action-btn edit-btn" data-id="${g.id}" data-nama="${g.nama || ''}" data-nip="${g.nip || ''}" title="Edit"><span class="material-icons-outlined" style="font-size: 18px; pointer-events: none;">edit</span></button>
+            <button class="action-btn btn-delete del-btn" data-id="${g.id}" title="Hapus"><span class="material-icons-outlined" style="font-size: 18px; pointer-events: none;">delete</span></button>
+          </div>
+        </td>
+      </tr>
     `).join('');
 
-    if (!guruList || guruList.length === 0) {
-      guruHtml = '<p style="color: #666;">Belum ada data guru.</p>';
-    }
-    container.innerHTML = guruHtml;
+    bindTableEvents();
+    updateFloatingBar();
+  }
 
-    // Rebind inner events
+  function bindTableEvents() {
+    document.querySelectorAll('.row-checkbox').forEach(cb => {
+      cb.addEventListener('change', updateFloatingBar);
+    });
+
+    const checkAll = document.getElementById('checkAll');
+    if (checkAll) {
+      const newCheckAll = checkAll.cloneNode(true);
+      checkAll.parentNode.replaceChild(newCheckAll, checkAll);
+      
+      newCheckAll.addEventListener('change', (e) => {
+        const isChecked = e.target.checked;
+        document.querySelectorAll('.row-checkbox').forEach(cb => {
+          cb.checked = isChecked;
+        });
+        updateFloatingBar();
+      });
+    }
+
     document.querySelectorAll('.edit-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
-        const id = e.target.dataset.id;
         document.getElementById('modalTitle').innerText = 'Edit Guru';
-        document.getElementById('guruId').value = id;
+        document.getElementById('guruId').value = e.target.dataset.id;
         document.getElementById('guruNama').value = e.target.dataset.nama;
         document.getElementById('guruNip').value = e.target.dataset.nip;
-        document.getElementById('guruNip').disabled = true;
+        document.getElementById('guruNip').disabled = true; // Can't easily update auth email here
         document.getElementById('formGroupPassword').style.display = 'none';
         document.getElementById('guruPassword').required = false;
         document.getElementById('modalGuru').classList.remove('hidden');
       });
     });
-    
+
     document.querySelectorAll('.del-btn').forEach(btn => {
       btn.addEventListener('click', async (e) => {
         if(confirm('Yakin ingin menghapus guru ini?')) {
-          const id = e.target.dataset.id;
-          const { error } = await window.supabase.from('profiles').delete().eq('id', id);
-          if (error) {
-            window.Components.toast('Gagal menghapus data: ' + error.message, 'error');
-          } else {
-            window.Components.toast('Berhasil dihapus');
-            fetchAndRenderList();
-          }
+          const { error } = await window.supabase.from('profiles').delete().eq('id', e.target.dataset.id);
+          if (error) window.Components.toast('Gagal hapus', 'error');
+          else { window.Components.toast('Berhasil dihapus'); fetchAndRenderList(); }
         }
       });
     });
   }
 
+  function updateFloatingBar() {
+    const checked = document.querySelectorAll('.row-checkbox:checked');
+    const bar = document.getElementById('floatingActionBar');
+    if (checked.length > 0) {
+      bar.style.transform = 'translateX(-50%) translateY(0)';
+      bar.style.opacity = '1';
+      document.getElementById('selectedCount').innerText = `${checked.length} guru dipilih`;
+    } else {
+      bar.style.transform = 'translateX(-50%) translateY(100px)';
+      bar.style.opacity = '0';
+    }
+  }
+
+  function handleSort(column) {
+    if (currentSort.column === column) {
+      currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+    } else {
+      currentSort.column = column;
+      currentSort.direction = 'asc';
+    }
+    renderTable();
+  }
+
   async function render() {
     const content = `
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
         <div>
-          <h1 style="margin: 0 0 8px 0; font-size: 24px; color: #333;">Kelola Guru</h1>
-          <span id="guruCountBadge" class="badge badge-primary" style="background: #e3f2fd; color: #1976d2; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 500;">... Guru</span>
+          <h1 style="margin: 0 0 4px 0; font-size: 28px; color: #111827; font-weight: 700;">Data Guru</h1>
+          <div id="guruCountBadge" style="color: #6b7280; font-size: 14px;">Memuat data...</div>
+        </div>
+        <div style="display: flex; gap: 12px;">
+          <button id="btnImport" class="btn btn-outline" style="background: white; border: 1px solid #d1d5db; color: #374151; padding: 10px 16px; border-radius: 8px; font-weight: 600; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+            <span class="material-icons-outlined" style="font-size: 20px;">file_upload</span> Import Excel/CSV
+          </button>
+          <button id="btnTambahGuru" class="btn btn-primary" style="background: #2563eb; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2); cursor: pointer;">
+            <span class="material-icons-outlined" style="font-size: 20px;">add</span> Tambah Guru
+          </button>
+        </div>
+      </div>
+      <div style="display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap;">
+        <div style="flex: 1; min-width: 250px; position: relative;">
+          <span class="material-icons-outlined" style="position: absolute; left: 16px; top: 12px; color: #9ca3af; font-size: 20px;">search</span>
+          <input type="text" id="searchGuru" placeholder="Cari nama guru atau NIP..." style="width: 100%; padding: 12px 16px 12px 44px; border: 1px solid #e5e7eb; border-radius: 12px; font-size: 14px; box-sizing: border-box; outline: none;">
+        </div>
+      </div>
+      <div style="background: white; border-radius: 16px; border: 1px solid #f3f4f6; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1); overflow: hidden;">
+        <table class="mutqin-table">
+          <thead style="background: #f9fafb;">
+            <tr>
+              <th style="width: 40px;"><input type="checkbox" id="checkAll" class="mutqin-checkbox"></th>
+              <th style="width: 50px;">#</th>
+              <th id="thNama" style="cursor: pointer; user-select: none;">NAMA GURU <span class="sort-icon" style="font-size:14px; margin-left:4px;"></span></th>
+              <th id="thNip" style="cursor: pointer; user-select: none;">NIP <span class="sort-icon" style="font-size:14px; margin-left:4px;"></span></th>
+              <th style="width: 120px;">AKSI</th>
+            </tr>
+          </thead>
+          <tbody id="guruTableBody"><tr><td colspan="5" style="text-align:center; padding: 24px; color:#666;">Memuat data...</td></tr></tbody>
+        </table>
+      </div>
+      <div id="floatingActionBar" style="position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%) translateY(100px); opacity: 0; transition: all 0.3s; background: #1f2937; color: white; padding: 16px 24px; border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5); display: flex; align-items: center; gap: 24px; z-index: 90;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <span class="material-icons-outlined" style="color: #60a5fa;">check_circle</span>
+          <span id="selectedCount" style="font-weight: 600; font-size: 15px;">0 guru dipilih</span>
+        </div>
+        <div style="width: 1px; height: 24px; background: #374151;"></div>
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <button id="btnBulkDelete" class="btn btn-outline" style="background: transparent; border: 1px solid #ef4444; color: #ef4444; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer;">Hapus</button>
         </div>
       </div>
       
-      <div class="search-bar" style="margin-bottom: 24px;">
-        <div style="position: relative;">
-          <span class="material-icons-outlined" style="position: absolute; left: 12px; top: 10px; color: #999;">search</span>
-          <input type="text" class="form-input" placeholder="Cari nama guru atau mata pelajaran..." style="width: 100%; padding: 10px 12px 10px 40px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box;">
+      <!-- Modal Form Guru -->
+      <div id="modalGuru" class="modal-overlay hidden" style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; display: none; align-items: center; justify-content: center;">
+        <div style="background: white; width: 100%; max-width: 450px; border-radius: 16px; padding: 24px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 id="modalTitle" style="margin: 0; font-size: 20px;">Tambah Guru</h3>
+            <button class="btn-batal-modal" style="background: none; border: none; cursor: pointer; color: #9ca3af;"><span class="material-icons-outlined">close</span></button>
+          </div>
+          <form id="formGuru">
+            <input type="hidden" id="guruId">
+            <div class="form-group mb-4">
+              <label style="font-weight: 600; display: block; margin-bottom: 8px;">Nama Lengkap</label>
+              <input type="text" id="guruNama" style="width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; box-sizing: border-box;" required>
+            </div>
+            <div class="form-group mb-4">
+              <label style="font-weight: 600; display: block; margin-bottom: 8px;">NIP (Nomor Induk Pegawai)</label>
+              <input type="text" id="guruNip" style="width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; box-sizing: border-box;" required pattern="[0-9]+" title="Hanya angka diperbolehkan">
+            </div>
+            <div class="form-group mb-5" id="formGroupPassword">
+              <label style="font-weight: 600; display: block; margin-bottom: 8px;">Password (Opsional)</label>
+              <input type="password" id="guruPassword" class="form-input" placeholder="Jika dikosongkan, password = NIP" minlength="6" style="width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; box-sizing: border-box;">
+            </div>
+            <div style="display: flex; gap: 12px; justify-content: flex-end;">
+              <button type="button" class="btn-batal-modal" style="padding: 10px 20px; border-radius: 8px; border: 1px solid #d1d5db; background: white; cursor: pointer;">Batal</button>
+              <button type="submit" class="btn btn-primary" style="padding: 10px 20px; border-radius: 8px; border: none; background: #2563eb; color: white; cursor: pointer;">Simpan</button>
+            </div>
+          </form>
         </div>
       </div>
 
-      <div id="guruListContainer" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px;">
-        <p style="color:#666;">Memuat data guru...</p>
+      <!-- Modal Import -->
+      <div id="modalImport" class="modal-overlay hidden" style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; display: none; align-items: center; justify-content: center;">
+        <div style="background: white; width: 100%; max-width: 600px; border-radius: 16px; padding: 24px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h3 style="margin: 0; font-size: 20px;">Import Data Guru</h3>
+            <button class="btn-batal-import" style="background: none; border: none; cursor: pointer; color: #9ca3af;"><span class="material-icons-outlined">close</span></button>
+          </div>
+          <form id="formImport">
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; margin-bottom: 16px; font-size: 13px; color: #475569;">
+              <strong>Cara Import:</strong> Copy tabel dari Excel yang berisi dua kolom (Kolom 1: NIP, Kolom 2: Nama Guru), lalu paste ke kotak di bawah ini.
+            </div>
+            <textarea id="importText" style="width: 100%; height: 200px; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; font-family: monospace; font-size: 13px; box-sizing: border-box; white-space: pre;" placeholder="19800101\\tBudi Santoso\\n19900202\\tSiti Aminah" required></textarea>
+            <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 16px;">
+              <button type="button" class="btn-batal-import" style="padding: 10px 20px; border-radius: 8px; border: 1px solid #d1d5db; background: white; cursor: pointer;">Batal</button>
+              <button type="submit" class="btn btn-primary" style="padding: 10px 20px; border-radius: 8px; border: none; background: #2563eb; color: white; cursor: pointer;">Proses Import</button>
+            </div>
+          </form>
+        </div>
       </div>
-      
-      <button id="btnTambahGuru" class="btn btn-primary" style="position: fixed; bottom: 24px; right: 24px; background: #1a73e8; color: white; border: none; padding: 12px 24px; border-radius: 24px; font-weight: 500; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(26,115,232,0.3); cursor: pointer; z-index: 90;">
-        <span class="material-icons-outlined">add</span> Tambah Guru
-      </button>
     `;
 
     const html = adminLayout('guru', content);
@@ -200,24 +326,33 @@
     if (btnCloseDrawer) btnCloseDrawer.addEventListener('click', () => { sidebar.classList.remove('open'); overlay.classList.add('hidden'); });
     if (overlay) overlay.addEventListener('click', () => { sidebar.classList.remove('open'); overlay.classList.add('hidden'); });
 
-    const modal = document.getElementById('modalGuru');
-    const form = document.getElementById('formGuru');
+    const modalGuru = document.getElementById('modalGuru');
+    const formGuru = document.getElementById('formGuru');
     
     document.getElementById('btnTambahGuru').addEventListener('click', () => {
       document.getElementById('modalTitle').innerText = 'Tambah Guru';
-      form.reset();
+      formGuru.reset();
       document.getElementById('guruId').value = '';
       document.getElementById('guruNip').disabled = false;
       document.getElementById('formGroupPassword').style.display = 'block';
-      document.getElementById('guruPassword').required = true;
-      modal.classList.remove('hidden');
+      document.getElementById('guruPassword').required = false;
+      modalGuru.classList.remove('hidden');
     });
 
-    document.getElementById('btnBatal').addEventListener('click', () => {
-      modal.classList.add('hidden');
-    });
+    document.querySelectorAll('.btn-batal-modal').forEach(btn => btn.addEventListener('click', () => modalGuru.classList.add('hidden')));
 
-    form.addEventListener('submit', async (e) => {
+    const modalImport = document.getElementById('modalImport');
+    document.getElementById('btnImport').addEventListener('click', () => {
+      document.getElementById('importText').value = '';
+      modalImport.classList.remove('hidden');
+    });
+    document.querySelectorAll('.btn-batal-import').forEach(btn => btn.addEventListener('click', () => modalImport.classList.add('hidden')));
+
+    document.getElementById('searchGuru').addEventListener('input', renderTable);
+    document.getElementById('thNama').addEventListener('click', () => handleSort('nama'));
+    document.getElementById('thNip').addEventListener('click', () => handleSort('nip'));
+
+    formGuru.addEventListener('submit', async (e) => {
       e.preventDefault();
       const id = document.getElementById('guruId').value;
       const data = {
@@ -227,7 +362,7 @@
       };
       const pwdInput = document.getElementById('guruPassword').value;
 
-      const submitBtn = form.querySelector('button[type="submit"]');
+      const submitBtn = formGuru.querySelector('button[type="submit"]');
       const originalText = submitBtn.innerText;
       submitBtn.innerText = 'Menyimpan...';
       submitBtn.disabled = true;
@@ -238,17 +373,11 @@
         error = res.error;
       } else {
         try {
-          const pwd = pwdInput.length >= 6 ? pwdInput : data.nip + '123';
-          const response = await fetch(`${window.supabaseUrl}/auth/v1/signup`, {
+          const pwd = pwdInput.length >= 6 ? pwdInput : data.nip; // default to NIP
+          const response = await fetch(\`\${window.supabaseUrl}/auth/v1/signup\`, {
             method: 'POST',
-            headers: {
-              'apikey': window.supabaseKey,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              email: `${data.nip}@sipintar.com`,
-              password: pwd
-            })
+            headers: { 'apikey': window.supabaseKey, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: \`\${data.nip}@sipintar.com\`, password: pwd })
           });
 
           const authData = await response.json();
@@ -269,29 +398,92 @@
 
       if (error) {
         console.error(error);
-        const errorMsg = error.message || 'Pastikan setup Auth/FK';
-        window.Components.toast(`Gagal menyimpan: ${errorMsg}`, 'error');
+        window.Components.toast(\`Gagal menyimpan: \${error.message}\`, 'error');
       } else {
         window.Components.toast('Berhasil disimpan');
-        modal.classList.add('hidden');
+        modalGuru.classList.add('hidden');
         fetchAndRenderList();
       }
     });
 
-    const btnTogglePwd = document.getElementById('toggle-guru-password');
-    if (btnTogglePwd) {
-      btnTogglePwd.addEventListener('click', () => {
-        const pwdInput = document.getElementById('guruPassword');
-        const icon = document.getElementById('toggle-guru-password-icon');
-        if (pwdInput.type === 'password') {
-          pwdInput.type = 'text';
-          icon.innerText = 'visibility';
-        } else {
-          pwdInput.type = 'password';
-          icon.innerText = 'visibility_off';
+    document.getElementById('formImport').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const text = document.getElementById('importText').value.trim();
+      if (!text) return;
+      
+      const submitBtn = document.getElementById('formImport').querySelector('button[type="submit"]');
+      const originalText = submitBtn.innerText;
+      submitBtn.innerText = 'Memproses...';
+      submitBtn.disabled = true;
+      
+      const rows = text.split('\\n');
+      let successCount = 0;
+      let failCount = 0;
+      
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i].trim();
+        if (!row) continue;
+        
+        const cols = row.split('\\t');
+        if (cols.length >= 2) {
+          const nip = cols[0].trim();
+          const nama = cols[1].trim();
+          
+          if (nip && nama) {
+             try {
+                const response = await fetch(\`\${window.supabaseUrl}/auth/v1/signup\`, {
+                  method: 'POST',
+                  headers: { 'apikey': window.supabaseKey, 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ email: \`\${nip}@sipintar.com\`, password: nip })
+                });
+                const authData = await response.json();
+                if (response.ok) {
+                   const userId = authData.id || authData.user?.id;
+                   if (userId) {
+                     const { error } = await window.supabase.from('profiles').insert([
+                        { id: userId, nip: nip, nama: nama, role: 'guru' }
+                     ]);
+                     if (!error) successCount++;
+                     else failCount++;
+                   } else { failCount++; }
+                } else { failCount++; }
+             } catch(err) {
+                failCount++;
+             }
+          }
         }
-      });
-    }
+      }
+      
+      submitBtn.innerText = originalText;
+      submitBtn.disabled = false;
+      document.getElementById('importText').value = '';
+      document.getElementById('modalImport').classList.add('hidden');
+      
+      window.Components.toast(\`Import Selesai: \${successCount} sukses, \${failCount} gagal\`);
+      fetchAndRenderList();
+    });
+
+    document.getElementById('btnBulkDelete').addEventListener('click', async () => {
+      const checked = document.querySelectorAll('.row-checkbox:checked');
+      if (checked.length === 0) return;
+      if (!confirm(\`Yakin ingin menghapus \${checked.length} guru?\`)) return;
+      
+      const ids = Array.from(checked).map(cb => cb.value);
+      const btn = document.getElementById('btnBulkDelete');
+      const originalText = btn.innerText;
+      btn.innerText = 'Menghapus...';
+      
+      const { error } = await window.supabase.from('profiles').delete().in('id', ids);
+      
+      btn.innerText = originalText;
+      if (error) {
+        window.Components.toast('Gagal menghapus data massal', 'error');
+      } else {
+        window.Components.toast(\`\${checked.length} guru berhasil dihapus\`);
+        document.getElementById('checkAll').checked = false;
+        fetchAndRenderList();
+      }
+    });
   }
 
   window.Router.register('/admin/guru', render);
