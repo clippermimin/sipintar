@@ -218,7 +218,7 @@
         <div class="ios-header">
           <div>
             <div class="ios-greeting-subtitle">${hariTanggal}</div>
-            <h1 class="ios-greeting-title">${greeting}, ${namaGuru.split(' ')[0]}</h1>
+            <h1 class="ios-greeting-title">${greeting}, ${namaGuru}</h1>
           </div>
           <div class="ios-avatar">${guru.avatar}</div>
         </div>
@@ -245,14 +245,14 @@
         <div class="ios-grid">
           <button class="ios-action-btn" id="btnPresensiSelfie" ${isPresensiDone ? 'style="opacity: 0.7;"' : ''}>
             <div class="ios-action-icon blue">
-              <span class="material-icons-outlined" style="font-size: 24px;">photo_camera</span>
+              <span style="font-size: 28px;">📸</span>
             </div>
             <div class="ios-action-label">Presensi<br/>Selfie</div>
           </button>
           
           <button class="ios-action-btn" id="btnBuatLaporanDashboard">
             <div class="ios-action-icon purple">
-              <span class="material-icons-outlined" style="font-size: 24px;">edit_document</span>
+              <span style="font-size: 28px;">📝</span>
             </div>
             <div class="ios-action-label">Laporan<br/>Piket</div>
           </button>
