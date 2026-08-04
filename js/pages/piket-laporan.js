@@ -292,9 +292,9 @@
 
           <!-- Catatan -->
           <div class="ios-form-group">
-            <label class="ios-form-label">Catatan Kejadian</label>
+            <label class="ios-form-label">Catatan Tambahan</label>
             <div class="ios-form-card">
-              <textarea id="catatan" class="ios-input" rows="4" style="background: transparent; padding: 0;" placeholder="Contoh: Belum ada guru pengganti di kelas XI, anak-anak kondusif." required></textarea>
+              <textarea id="catatan" class="ios-input" rows="4" style="background: transparent; padding: 0;" placeholder="Contoh: Alhamdulillah sesi berjalan dengan baik lancar"></textarea>
             </div>
           </div>
           
