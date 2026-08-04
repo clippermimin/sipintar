@@ -161,13 +161,30 @@ window.APP_DATA = {
     
     // 2. Insert Absensi Siswa
     if (laporanData.absensi && laporanData.absensi.length > 0) {
-      const absensiInserts = laporanData.absensi.map(ab => {
+      let absensiInserts = [];
+      const needsLookup = laporanData.absensi.some(ab => ab.siswa_id === 'undefined' || ab.siswa_id === 'null' || !ab.siswa_id);
+      
+      let siswaData = [];
+      if (needsLookup) {
+        const names = laporanData.absensi.map(a => a.namaSiswa).filter(Boolean);
+        if (names.length > 0) {
+          const { data } = await window.supabase.from('siswa').select('id, nama').in('nama', names);
+          siswaData = data || [];
+        }
+      }
+
+      absensiInserts = laporanData.absensi.map(ab => {
+        let sid = (ab.siswa_id === 'undefined' || ab.siswa_id === 'null' || !ab.siswa_id) ? null : ab.siswa_id;
+        if (!sid && ab.namaSiswa) {
+           const s = siswaData.find(sd => sd.nama === ab.namaSiswa);
+           if (s) sid = s.id;
+        }
         return {
           laporan_id: laporan.id,
-          siswa_id: ab.siswa_id || null,
+          siswa_id: sid,
           status: ab.status
         };
-      }).filter(a => a.siswa_id !== null && a.siswa_id !== undefined);
+      }).filter(a => a.siswa_id !== null);
       
       if (absensiInserts.length > 0) {
         const { error: absErr } = await window.supabase.from('absensi_piket').insert(absensiInserts);
