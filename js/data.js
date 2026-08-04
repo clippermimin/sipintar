@@ -161,19 +161,13 @@ window.APP_DATA = {
     
     // 2. Insert Absensi Siswa
     if (laporanData.absensi && laporanData.absensi.length > 0) {
-      const names = laporanData.absensi.map(a => a.namaSiswa);
-      const { data: siswaData, error: siswaErr } = await window.supabase.from('siswa').select('id, nama').in('nama', names);
-      
-      if (siswaErr) console.error("Error fetching siswa IDs", siswaErr);
-      
       const absensiInserts = laporanData.absensi.map(ab => {
-        const s = siswaData?.find(sd => sd.nama === ab.namaSiswa);
         return {
           laporan_id: laporan.id,
-          siswa_id: s ? s.id : null,
+          siswa_id: ab.siswa_id || null,
           status: ab.status
         };
-      }).filter(a => a.siswa_id !== null);
+      }).filter(a => a.siswa_id !== null && a.siswa_id !== undefined);
       
       if (absensiInserts.length > 0) {
         const { error: absErr } = await window.supabase.from('absensi_piket').insert(absensiInserts);

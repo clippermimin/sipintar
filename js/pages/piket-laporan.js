@@ -379,7 +379,7 @@
       list.innerHTML = siswaData.map((s, idx) => `
         <div class="absen-item">
           <label style="display: flex; align-items: center; gap: 12px; flex: 1; font-size: 14px; font-weight: 500; cursor: pointer;">
-            <input type="checkbox" class="absen-checkbox" data-nama="${s.nama}" data-kelas="${kelasId}" data-idx="${idx}" style="width: 18px; height: 18px; accent-color: #FF3B30;">
+            <input type="checkbox" class="absen-checkbox" data-id="${s.id}" data-nama="${s.nama}" data-kelas="${kelasId}" data-idx="${idx}" style="width: 18px; height: 18px; accent-color: #FF3B30;">
             ${s.nama}
           </label>
           <select id="status-${blockId}-${idx}" class="ios-input" style="width: 100px; padding: 6px 8px; font-size: 13px; background: #F2F2F7;">
@@ -422,6 +422,7 @@
           const blockId = cb.closest('.kelas-block').id;
           const status = document.getElementById(`status-${blockId}-${idx}`).value;
           return {
+            siswa_id: cb.getAttribute('data-id'),
             namaSiswa: cb.getAttribute('data-nama'),
             kelas_id: cb.getAttribute('data-kelas'),
             status: status
