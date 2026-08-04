@@ -283,6 +283,96 @@ window.APP_DATA = {
     });
   },
   
+  async getLaporanPiketById(id) {
+    const { data, error } = await window.supabase
+      .from('laporan_piket')
+      .select(`
+        *,
+        absensi_piket (
+          siswa_id, status,
+          siswa (nama, kelas_id)
+        )
+      `)
+      .eq('id', id)
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async updateLaporanPiket(id, laporanData) {
+    // 1. Update Laporan Piket
+    let p1Name = "Petugas 1";
+    let p2Name = "Petugas 2";
+    const { data: petugasData } = await window.supabase
+      .from('profiles')
+      .select('id, nama')
+      .in('id', [laporanData.petugas_1, laporanData.petugas_2]);
+      
+    if (petugasData) {
+      const p1 = petugasData.find(p => p.id === laporanData.petugas_1);
+      const p2 = petugasData.find(p => p.id === laporanData.petugas_2);
+      if (p1) p1Name = p1.nama;
+      if (p2) p2Name = p2.nama;
+    }
+
+    const { error: lapErr } = await window.supabase
+      .from('laporan_piket')
+      .update({
+        sesi: laporanData.sesi,
+        guru_id: laporanData.petugas_1,
+        catatan: `[Petugas 1: ${p1Name}, Petugas 2: ${p2Name}] ` + laporanData.catatan,
+        status: laporanData.status || 'Selesai'
+      })
+      .eq('id', id);
+
+    if (lapErr) throw lapErr;
+
+    // 2. Refresh Absensi
+    await window.supabase.from('absensi_piket').delete().eq('laporan_id', id);
+
+    if (laporanData.absensi && laporanData.absensi.length > 0) {
+      let absensiInserts = [];
+      const needsLookup = laporanData.absensi.some(ab => ab.siswa_id === 'undefined' || ab.siswa_id === 'null' || !ab.siswa_id);
+      
+      let siswaData = [];
+      if (needsLookup) {
+        const names = laporanData.absensi.map(a => a.namaSiswa).filter(Boolean);
+        if (names.length > 0) {
+          const { data } = await window.supabase.from('siswa').select('id, nama').in('nama', names);
+          siswaData = data || [];
+        }
+      }
+
+      absensiInserts = laporanData.absensi.map(ab => {
+        let sid = (ab.siswa_id === 'undefined' || ab.siswa_id === 'null' || !ab.siswa_id) ? null : ab.siswa_id;
+        if (!sid && ab.namaSiswa) {
+           const s = siswaData.find(sd => sd.nama === ab.namaSiswa);
+           if (s) sid = s.id;
+        }
+        return {
+          laporan_id: id,
+          siswa_id: sid,
+          status: ab.status
+        };
+      }).filter(a => a.siswa_id !== null);
+      
+      if (absensiInserts.length > 0) {
+        await window.supabase.from('absensi_piket').insert(absensiInserts);
+      }
+    }
+    
+    return true;
+  },
+
+  async deleteLaporanPiket(id) {
+    // Supabase cascade delete will handle absensi_piket if foreign key is configured properly. 
+    // Just to be safe, we delete absensi first.
+    await window.supabase.from('absensi_piket').delete().eq('laporan_id', id);
+    const { error } = await window.supabase.from('laporan_piket').delete().eq('id', id);
+    if (error) throw error;
+    return true;
+  },
+  
   async getExportData(startDate, endDate) {
     let query = window.supabase
       .from('laporan_piket')

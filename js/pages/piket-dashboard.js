@@ -39,8 +39,16 @@
                 <div class="ios-list-title">Sesi ${lap.sesi}</div>
                 <div class="ios-list-subtitle">${lap.tanggal}</div>
               </div>
-              <div class="ios-list-right" style="color: ${isDone ? '#34C759' : '#FF9500'}">
-                ${lap.status}
+              <div class="ios-list-right" style="color: ${isDone ? '#34C759' : '#FF9500'}; display: flex; align-items: center; gap: 12px;">
+                <span>${lap.status}</span>
+                <div style="display: flex; gap: 8px; margin-left: 8px;">
+                  <button class="btn-edit-lap" data-id="${lap.id}" style="background: none; border: none; color: #007AFF; padding: 4px; cursor: pointer;">
+                    <span class="material-icons-outlined" style="font-size: 18px;">edit</span>
+                  </button>
+                  <button class="btn-delete-lap" data-id="${lap.id}" style="background: none; border: none; color: #FF3B30; padding: 4px; cursor: pointer;">
+                    <span class="material-icons-outlined" style="font-size: 18px;">delete</span>
+                  </button>
+                </div>
               </div>
             </div>
           `;
@@ -345,6 +353,33 @@
 
     const btnUnduh = document.getElementById('btnUnduhLaporan');
     if (btnUnduh) btnUnduh.addEventListener('click', () => window.Router.navigate('/export'));
+
+    document.querySelectorAll('.btn-edit-lap').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = e.currentTarget.getAttribute('data-id');
+        window.Router.navigate(`/guru/piket/laporan?id=${id}`);
+      });
+    });
+
+    document.querySelectorAll('.btn-delete-lap').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const id = e.currentTarget.getAttribute('data-id');
+        if (confirm('Apakah Anda yakin ingin menghapus laporan ini? Data yang dihapus tidak dapat dikembalikan.')) {
+          try {
+            window.Components.showLoading('Menghapus laporan...');
+            await window.APP_DATA.deleteLaporanPiket(id);
+            window.Components.hideLoading();
+            window.Components.toast('Laporan berhasil dihapus', 'success');
+            // Refresh dashboard
+            render();
+          } catch (err) {
+            window.Components.hideLoading();
+            console.error(err);
+            window.Components.toast('Gagal menghapus laporan', 'error');
+          }
+        }
+      });
+    });
   }
 
   window.Router.register('/guru/piket', render);

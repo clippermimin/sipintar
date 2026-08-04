@@ -2,6 +2,8 @@
   let kelasList = [];
   let allGuru = [];
   let blockCounter = 0;
+  let editId = null;
+  let editLaporan = null;
   
   async function render() {
     window.Components.showLoading();
@@ -18,6 +20,36 @@
     
     const { data: guruData } = await window.supabase.from('profiles').select('*').eq('role', 'guru').order('nama');
     allGuru = guruData || [];
+
+    const urlParams = new URLSearchParams(window.location.search);
+    editId = urlParams.get('id');
+    let prefillCatatan = '';
+    let prefillP2 = '';
+    let prefillP1 = guru.id;
+    let prefillSesi = 'Pagi';
+
+    if (editId) {
+      try {
+        editLaporan = await window.APP_DATA.getLaporanPiketById(editId);
+        prefillSesi = editLaporan.sesi || 'Pagi';
+        prefillP1 = editLaporan.guru_id;
+        const petugasMatch = (editLaporan.catatan || '').match(/^\[(.*?)\]\s*/);
+        if (petugasMatch) {
+          const namesStr = petugasMatch[1]; 
+          const p2Match = namesStr.match(/Petugas 2: (.*?)$/);
+          if (p2Match) {
+             const guru2 = allGuru.find(g => g.nama === p2Match[1]);
+             if (guru2) prefillP2 = guru2.id;
+          }
+          prefillCatatan = editLaporan.catatan.substring(petugasMatch[0].length);
+        } else {
+          prefillCatatan = editLaporan.catatan || '';
+        }
+      } catch (e) {
+        console.error("Gagal load edit", e);
+        window.Components.toast("Gagal memuat data laporan", "error");
+      }
+    }
 
     window.Components.hideLoading();
 
@@ -221,7 +253,7 @@
             <a class="ios-back-btn" onclick="window.Router.navigate('/guru/piket')">
               <span class="material-icons-outlined">arrow_back</span>
             </a>
-            <h1 class="ios-nav-title">Laporan Piket</h1>
+            <h1 class="ios-nav-title">${editId ? "Edit Laporan" : "Laporan Piket"}</h1>
           </div>
           <div class="ios-avatar">${initials}</div>
         </div>
@@ -257,13 +289,13 @@
             <label class="ios-form-label">Sesi</label>
             <div class="ios-radio-grid">
               <div class="ios-radio-card">
-                <input type="radio" name="sesi" id="sesi-pagi" value="Pagi" checked>
+                <input type="radio" name="sesi" id="sesi-pagi" value="Pagi" ${prefillSesi === "Pagi" ? "checked" : ""}>
                 <label for="sesi-pagi">
                   <span style="font-size: 20px;">☀️</span> Pagi
                 </label>
               </div>
               <div class="ios-radio-card">
-                <input type="radio" name="sesi" id="sesi-siang" value="Siang">
+                <input type="radio" name="sesi" id="sesi-siang" value="Siang" ${prefillSesi === "Siang" ? "checked" : ""}>
                 <label for="sesi-siang">
                   <span style="font-size: 20px;">🌇</span> Siang
                 </label>
@@ -301,7 +333,7 @@
           <div style="padding: 0 20px 40px;">
             <button type="submit" id="btn-simpan" class="ios-btn-primary">
               <span class="material-icons-outlined">save</span>
-              Simpan Laporan
+              ${editId ? "Perbarui" : "Simpan"} Laporan
             </button>
           </div>
         </form>
@@ -310,21 +342,50 @@
     
     window.Components.renderPage(html);
     
-    // Auto set Petugas 1 to current user
-    if (guru.id) {
-      setTimeout(() => {
-        const p1 = document.getElementById('petugas-1');
-        if (p1) p1.value = guru.id;
-      }, 100);
-    }
+    
+    setTimeout(() => {
+      if (editId && editLaporan) {
+        document.getElementById('petugas-1').value = prefillP1 || '';
+        if (prefillP2) document.getElementById('petugas-2').value = prefillP2;
+      } else if (guru.id) {
+        document.getElementById('petugas-1').value = guru.id;
+      }
+    }, 100);
     
     setTimeout(() => {
       bindEvents();
-      addKelasBlock(); // Add first block by default
+      if (editId && editLaporan && editLaporan.absensi_piket && editLaporan.absensi_piket.length > 0) {
+        const grouped = {};
+        editLaporan.absensi_piket.forEach(a => {
+          if (!a.siswa) return;
+          const kId = a.siswa.kelas_id;
+          if (!grouped[kId]) grouped[kId] = [];
+          grouped[kId].push(a);
+        });
+        Object.keys(grouped).forEach(kId => {
+          const blockId = addKelasBlock(kId);
+          setTimeout(() => {
+             const list = document.getElementById(`siswa-list-${blockId}`);
+             if (list) {
+                grouped[kId].forEach(a => {
+                   const cb = list.querySelector(`.absen-checkbox[data-id="${a.siswa_id}"]`);
+                   if (cb) {
+                      cb.checked = true;
+                      const idx = cb.getAttribute('data-idx');
+                      const sel = document.getElementById(`status-${blockId}-${idx}`);
+                      if (sel) sel.value = a.status;
+                   }
+                });
+             }
+          }, 800);
+        });
+      } else {
+        addKelasBlock();
+      }
     }, 200);
   }
   
-  function addKelasBlock() {
+  function addKelasBlock(prefillKelasId = null) {
     blockCounter++;
     const blockId = `kelas-block-${blockCounter}`;
     
@@ -350,6 +411,14 @@
     `;
     
     document.getElementById('kelas-blocks-container').insertAdjacentHTML('beforeend', blockHtml);
+    if (prefillKelasId) {
+       const sel = document.querySelector(`#${blockId} .select-kelas-dinamis`);
+       if (sel) {
+          sel.value = prefillKelasId;
+          sel.dispatchEvent(new Event('change'));
+       }
+    }
+    return blockId;
     
     if (blockCounter > 1) {
       document.querySelector(`#${blockId} .btn-remove-block`).addEventListener('click', function() {
@@ -439,8 +508,13 @@
           status: 'Selesai'
         };
         
-        await window.APP_DATA.submitLaporanPiket(data);
-        window.Components.toast('Laporan berhasil disimpan!', 'success');
+        if (editId) {
+          await window.APP_DATA.updateLaporanPiket(editId, data);
+          window.Components.toast('Laporan berhasil diperbarui!', 'success');
+        } else {
+          await window.APP_DATA.submitLaporanPiket(data);
+          window.Components.toast('Laporan berhasil disimpan!', 'success');
+        }
         
         setTimeout(() => {
           window.Router.navigate('/guru/dashboard');
