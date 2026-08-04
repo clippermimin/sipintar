@@ -12,13 +12,13 @@
           <div class="login-card">
             <form id="login-form">
               <div class="form-group">
-                <label class="form-label">NIP (Nomor Induk Pegawai)</label>
-                <input type="text" id="login-nip" class="form-input" placeholder="Masukkan NIP anda" required>
+                <label class="form-label">Username</label>
+                <input type="text" id="login-nip" class="form-input" placeholder="silahkan masukan username anda" required>
               </div>
               <div class="form-group mb-4">
                 <label class="form-label">Password</label>
                 <div style="position: relative;">
-                  <input type="password" id="login-password" class="form-input" placeholder="Masukkan password (default: NIP)" required style="padding-right: 40px;">
+                  <input type="password" id="login-password" class="form-input" placeholder="Masukkan password" required style="padding-right: 40px;">
                   <button type="button" id="toggle-password" style="position: absolute; right: 12px; top: 10px; background: none; border: none; cursor: pointer; color: #666; display: flex; padding: 0;">
                     <span class="material-icons-outlined" id="toggle-password-icon" style="font-size: 20px;">visibility_off</span>
                   </button>
@@ -57,7 +57,7 @@
       Components.hideLoading();
       let errMsg = error.message;
       if (errMsg.includes('Invalid login credentials')) {
-        errMsg = 'NIP atau Password salah';
+        errMsg = 'Username atau Password salah';
       }
       window.Components.toast(errMsg, 'error');
     }
