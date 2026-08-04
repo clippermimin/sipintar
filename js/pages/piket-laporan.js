@@ -330,18 +330,16 @@
     
     const blockHtml = `
       <div id="${blockId}" class="kelas-block">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-          <div style="font-weight: 700; color: #1C1C1E;">Kelas ${blockCounter}</div>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <select class="ios-input select-kelas-dinamis" data-block="${blockId}" required style="flex: 1;">
+            <option value="" disabled selected>-- Pilih Kelas --</option>
+            ${kelasList.map(k => `<option value="${k.id}">${k.nama}</option>`).join('')}
+          </select>
           ${blockCounter > 1 ? `
-          <button type="button" class="btn-remove-block" data-target="${blockId}" style="background:none; border:none; color: #FF3B30; padding: 4px; border-radius: 50%; display: flex; align-items: center; cursor: pointer;">
+          <button type="button" class="btn-remove-block" data-target="${blockId}" style="background:none; border:none; color: #FF3B30; padding: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
             <span class="material-icons-outlined">close</span>
           </button>` : ''}
         </div>
-        
-        <select class="ios-input select-kelas-dinamis" data-block="${blockId}" required>
-          <option value="" disabled selected>-- Pilih Kelas --</option>
-          ${kelasList.map(k => `<option value="${k.id}">${k.nama}</option>`).join('')}
-        </select>
         
         <div class="siswa-container" id="siswa-container-${blockId}" style="display: none; margin-top: 12px;">
           <div class="siswa-list" id="siswa-list-${blockId}">
