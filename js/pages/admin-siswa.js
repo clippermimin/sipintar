@@ -81,6 +81,7 @@
   
   let globalKelas = [];
   let globalSiswa = [];
+  let currentSort = { column: 'nama', direction: 'asc' };
   
   async function fetchAndRenderList() {
     const container = document.getElementById('siswaTableBody');
@@ -116,6 +117,21 @@
       const matchKelas = filterKelas === 'ALL' || s.kelas_id === filterKelas;
       return matchName && matchKelas;
     });
+
+    filtered.sort((a, b) => {
+      let valA = currentSort.column === 'nama' ? a.nama.toLowerCase() : (a.kelas?.nama || '').toLowerCase();
+      let valB = currentSort.column === 'nama' ? b.nama.toLowerCase() : (b.kelas?.nama || '').toLowerCase();
+      
+      if (valA < valB) return currentSort.direction === 'asc' ? -1 : 1;
+      if (valA > valB) return currentSort.direction === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    // Update sort icons
+    const thNamaIcon = document.getElementById('thNama').querySelector('.sort-icon');
+    const thKelasIcon = document.getElementById('thKelas').querySelector('.sort-icon');
+    if (thNamaIcon) thNamaIcon.innerHTML = currentSort.column === 'nama' ? (currentSort.direction === 'asc' ? '↑' : '↓') : '';
+    if (thKelasIcon) thKelasIcon.innerHTML = currentSort.column === 'kelas' ? (currentSort.direction === 'asc' ? '↑' : '↓') : '';
 
     document.getElementById('siswaCountBadge').innerText = `${filtered.length} siswa terdaftar`;
 
@@ -196,6 +212,16 @@
     }
   }
 
+  function handleSort(column) {
+    if (currentSort.column === column) {
+      currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+    } else {
+      currentSort.column = column;
+      currentSort.direction = 'asc';
+    }
+    renderTable();
+  }
+
   async function render() {
     const content = `
       <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
@@ -229,8 +255,8 @@
             <tr>
               <th style="width: 40px;"><input type="checkbox" id="checkAll" class="mutqin-checkbox"></th>
               <th style="width: 50px;">#</th>
-              <th>NAMA SISWA</th>
-              <th>KELAS</th>
+              <th id="thNama" style="cursor: pointer; user-select: none;">NAMA SISWA <span class="sort-icon" style="font-size:14px; margin-left:4px;"></span></th>
+              <th id="thKelas" style="cursor: pointer; user-select: none;">KELAS <span class="sort-icon" style="font-size:14px; margin-left:4px;"></span></th>
               <th style="width: 120px;">AKSI</th>
             </tr>
           </thead>
@@ -305,6 +331,9 @@
 
     document.getElementById('searchSiswa').addEventListener('input', renderTable);
     document.getElementById('filterKelas').addEventListener('change', renderTable);
+    
+    document.getElementById('thNama').addEventListener('click', () => handleSort('nama'));
+    document.getElementById('thKelas').addEventListener('click', () => handleSort('kelas'));
 
     document.getElementById('formSiswa').addEventListener('submit', async (e) => {
       e.preventDefault();
