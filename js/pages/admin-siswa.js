@@ -42,102 +42,126 @@
             </a>
           </div>
         </div>
-        <div class="admin-content" style="flex: 1; margin-left: 260px; padding: 24px; min-height: 100vh; background: #f8f9fa;">
+        <div class="admin-content" style="flex: 1; margin-left: 260px; padding: 32px; min-height: 100vh; background: #f4f6f8;">
           ${content}
         </div>
-        
-        <!-- Modal Form Siswa -->
-        <div id="modalSiswa" class="modal-overlay hidden" style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; display: none; align-items: center; justify-content: center;">
-          <div style="background: white; width: 100%; max-width: 400px; border-radius: 12px; padding: 24px;">
-            <h3 id="modalTitle" style="margin-top: 0;">Tambah Siswa</h3>
-            <form id="formSiswa">
-              <input type="hidden" id="siswaId">
-              <div class="form-group mb-3">
-                <label class="form-label">Nama Lengkap</label>
-                <input type="text" id="siswaNama" class="form-input" required>
-              </div>
-              <div class="form-group mb-4">
-                <label class="form-label">Kelas</label>
-                <select id="siswaKelas" class="form-input" required></select>
-              </div>
-              <div style="display: flex; gap: 12px; justify-content: flex-end;">
-                <button type="button" id="btnBatal" class="btn btn-outline">Batal</button>
-                <button type="submit" class="btn btn-primary">Simpan</button>
-              </div>
-            </form>
-          </div>
-        </div>
-        
         <style>
-          .admin-page { display: flex; min-height: 100vh; }
+          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+          
+          .admin-page { display: flex; min-height: 100vh; font-family: 'Inter', sans-serif; }
           .admin-sidebar-item { display: flex; align-items: center; gap: 12px; padding: 12px 24px; color: #5f6368; text-decoration: none; font-weight: 500; transition: background 0.2s; }
           .admin-sidebar-item:hover { background: #f1f3f4; color: #1a73e8; }
           .admin-sidebar-item.active { background: #e8f0fe; color: #1a73e8; border-right: 4px solid #1a73e8; }
           .modal-overlay:not(.hidden) { display: flex !important; }
+          
+          /* Table Styles */
+          .mutqin-table { width: 100%; border-collapse: collapse; }
+          .mutqin-table th { text-align: left; padding: 16px 20px; border-bottom: 2px solid #f0f0f0; color: #888; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+          .mutqin-table td { padding: 16px 20px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; font-size: 14px; }
+          .mutqin-table tr:last-child td { border-bottom: none; }
+          .mutqin-table tbody tr:hover { background-color: #fafbfc; }
+          
+          /* Checkbox styling */
+          .mutqin-checkbox { width: 18px; height: 18px; cursor: pointer; border: 1px solid #ccc; border-radius: 4px; accent-color: #1a73e8; }
+          
+          /* Badges and Buttons */
+          .kelas-badge { background: #e3f2fd; color: #1976d2; padding: 4px 10px; border-radius: 6px; font-weight: 600; font-size: 12px; display: inline-block; }
+          .action-btn { background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 6px; padding: 6px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; color: #666; transition: all 0.2s; }
+          .action-btn:hover { background: #e8f0fe; color: #1a73e8; border-color: #c6dafc; }
+          .action-btn.btn-delete:hover { background: #fce8e6; color: #ea4335; border-color: #fad2cf; }
+          
+          @keyframes spin { 100% { transform: rotate(360deg); } }
+          
           @media (min-width: 769px) { .admin-mobile-header { display: none !important; } #adminDrawerOverlay { display: none !important; } #btnCloseDrawer { display: none !important; } }
-          @media (max-width: 768px) { .admin-page { flex-direction: column; } .admin-content { margin-left: 0 !important; padding: 16px !important; } .admin-sidebar { transform: translateX(-100%); } .admin-sidebar.open { transform: translateX(0); } }
+          @media (max-width: 768px) { .admin-page { flex-direction: column; } .admin-content { margin-left: 0 !important; padding: 16px !important; } .admin-sidebar { transform: translateX(-100%); } .admin-sidebar.open { transform: translateX(0); } .mutqin-table { display: block; overflow-x: auto; white-space: nowrap; } }
         </style>
       </div>
     `;
   }
   
   let globalKelas = [];
-
+  let globalSiswa = [];
+  
   async function fetchAndRenderList() {
-    const container = document.getElementById('siswaListContainer');
+    const container = document.getElementById('siswaTableBody');
     if (!container) return;
     
-    // Fetch kelas and siswa
-    const { data: kelasList } = await window.supabase.from('kelas').select('*').order('nama');
-    const { data: siswaList } = await window.supabase.from('siswa').select('*, kelas(nama)').order('nama');
+    container.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 24px; color:#666;">Memuat data...</td></tr>';
     
-    globalKelas = kelasList || [];
-    const siswaArr = siswaList || [];
+    const [resKelas, resSiswa] = await Promise.all([
+      window.supabase.from('kelas').select('*').order('nama'),
+      window.supabase.from('siswa').select('*, kelas(nama)').order('nama')
+    ]);
     
-    document.getElementById('siswaCountBadge').innerText = `${siswaArr.length} Siswa`;
+    globalKelas = resKelas.data || [];
+    globalSiswa = resSiswa.data || [];
+    
+    const kelasOptions = globalKelas.map(k => `<option value="${k.id}">${k.nama}</option>`).join('');
+    document.getElementById('siswaKelas').innerHTML = kelasOptions;
+    document.getElementById('filterKelas').innerHTML = `<option value="ALL">Semua Kelas</option>` + kelasOptions;
+    document.getElementById('bulkKelas').innerHTML = `<option value="" disabled selected>Pilih Kelas Tujuan...</option>` + kelasOptions;
+    
+    renderTable();
+  }
 
-    let contentHtmlArr = (kelasList || []).map(k => {
-      const siswaInKelas = siswaArr.filter(s => s.kelas_id === k.id);
-      if (siswaInKelas.length === 0) return '';
-      
-      const siswaItems = siswaInKelas.map((s, i) => `
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #eee;">
-          <div style="display: flex; align-items: center; gap: 12px;">
-            <div style="width: 32px; height: 32px; border-radius: 50%; background: #f0f0f0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; color: #666;">
-              ${i+1}
-            </div>
-            <span style="font-size: 14px; color: #333;">${s.nama}</span>
-          </div>
-          <div style="display: flex; gap: 8px;">
-            <button class="btn btn-outline edit-btn" data-id="${s.id}" data-nama="${s.nama}" data-kelas="${s.kelas_id}" style="padding: 4px 8px; font-size: 12px; border-radius: 4px; border: 1px solid #ccc; background: white; cursor: pointer;">Edit</button>
-            <button class="btn btn-outline del-btn" data-id="${s.id}" style="padding: 4px 8px; font-size: 12px; border-radius: 4px; border: 1px solid #ea4335; color: #ea4335; background: white; cursor: pointer;">Hapus</button>
-          </div>
-        </div>
-      `).join('');
+  function renderTable() {
+    const container = document.getElementById('siswaTableBody');
+    if (!container) return;
 
-      return `
-        <div class="card" style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 24px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-            <h3 style="margin: 0; font-size: 16px; color: #333;">Kelas ${k.nama}</h3>
-            <span style="color: #666; font-size: 14px;">${siswaInKelas.length} Siswa</span>
-          </div>
-          <div>${siswaItems}</div>
-        </div>
-      `;
+    const filterText = document.getElementById('searchSiswa').value.toLowerCase();
+    const filterKelas = document.getElementById('filterKelas').value;
+    
+    let filtered = globalSiswa.filter(s => {
+      const matchName = s.nama.toLowerCase().includes(filterText);
+      const matchKelas = filterKelas === 'ALL' || s.kelas_id === filterKelas;
+      return matchName && matchKelas;
     });
-    
-    let contentHtml = contentHtmlArr.join('');
-    if (!contentHtml) contentHtml = '<p>Belum ada data siswa.</p>';
 
-    container.innerHTML = contentHtml;
+    document.getElementById('siswaCountBadge').innerText = `${filtered.length} siswa terdaftar`;
 
-    // Update select options
-    const selectKelas = document.getElementById('siswaKelas');
-    if (selectKelas) {
-      selectKelas.innerHTML = globalKelas.map(k => `<option value="${k.id}">${k.nama}</option>`).join('');
+    if (filtered.length === 0) {
+      container.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 32px; color:#999;">Tidak ada data siswa ditemukan.</td></tr>';
+      return;
     }
 
-    // Rebind inner events
+    container.innerHTML = filtered.map((s, i) => `
+      <tr>
+        <td style="width: 40px;"><input type="checkbox" class="mutqin-checkbox row-checkbox" value="${s.id}"></td>
+        <td style="width: 50px; color: #888;">${i + 1}</td>
+        <td><div style="font-weight: 600; color: #202124;">${s.nama}</div></td>
+        <td><div class="kelas-badge">${s.kelas?.nama || '-'}</div></td>
+        <td style="width: 120px;">
+          <div style="display: flex; gap: 8px;">
+            <button class="action-btn edit-btn" data-id="${s.id}" data-nama="${s.nama}" data-kelas="${s.kelas_id}" title="Edit"><span class="material-icons-outlined" style="font-size: 18px; pointer-events: none;">edit</span></button>
+            <button class="action-btn btn-delete del-btn" data-id="${s.id}" title="Hapus"><span class="material-icons-outlined" style="font-size: 18px; pointer-events: none;">delete</span></button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+
+    bindTableEvents();
+    updateFloatingBar();
+  }
+
+  function bindTableEvents() {
+    document.querySelectorAll('.row-checkbox').forEach(cb => {
+      cb.addEventListener('change', updateFloatingBar);
+    });
+
+    const checkAll = document.getElementById('checkAll');
+    if (checkAll) {
+      const newCheckAll = checkAll.cloneNode(true);
+      checkAll.parentNode.replaceChild(newCheckAll, checkAll);
+      
+      newCheckAll.addEventListener('change', (e) => {
+        const isChecked = e.target.checked;
+        document.querySelectorAll('.row-checkbox').forEach(cb => {
+          cb.checked = isChecked;
+        });
+        updateFloatingBar();
+      });
+    }
+
     document.querySelectorAll('.edit-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         document.getElementById('modalTitle').innerText = 'Edit Siswa';
@@ -147,53 +171,120 @@
         document.getElementById('modalSiswa').classList.remove('hidden');
       });
     });
-    
+
     document.querySelectorAll('.del-btn').forEach(btn => {
       btn.addEventListener('click', async (e) => {
         if(confirm('Yakin ingin menghapus siswa ini?')) {
           const { error } = await window.supabase.from('siswa').delete().eq('id', e.target.dataset.id);
-          if (error) {
-            window.Components.toast('Gagal menghapus data', 'error');
-          } else {
-            window.Components.toast('Berhasil dihapus');
-            fetchAndRenderList();
-          }
+          if (error) window.Components.toast('Gagal hapus', 'error');
+          else { window.Components.toast('Berhasil dihapus'); fetchAndRenderList(); }
         }
       });
     });
   }
 
+  function updateFloatingBar() {
+    const checked = document.querySelectorAll('.row-checkbox:checked');
+    const bar = document.getElementById('floatingActionBar');
+    if (checked.length > 0) {
+      bar.style.transform = 'translateX(-50%) translateY(0)';
+      bar.style.opacity = '1';
+      document.getElementById('selectedCount').innerText = `${checked.length} siswa dipilih`;
+    } else {
+      bar.style.transform = 'translateX(-50%) translateY(100px)';
+      bar.style.opacity = '0';
+    }
+  }
+
   async function render() {
     const content = `
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
         <div>
-          <h1 style="margin: 0 0 8px 0; font-size: 24px; color: #333;">Kelola Siswa</h1>
-          <span id="siswaCountBadge" class="badge badge-success" style="background: #e8f5e9; color: #2e7d32; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 500;">... Siswa</span>
+          <h1 style="margin: 0 0 4px 0; font-size: 28px; color: #111827; font-weight: 700;">Data Siswa</h1>
+          <div id="siswaCountBadge" style="color: #6b7280; font-size: 14px;">Memuat data...</div>
+        </div>
+        <div style="display: flex; gap: 12px;">
+          <button id="btnImport" class="btn btn-outline" style="background: white; border: 1px solid #d1d5db; color: #374151; padding: 10px 16px; border-radius: 8px; font-weight: 600; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+            <span class="material-icons-outlined" style="font-size: 20px;">file_upload</span> Import Excel/CSV
+          </button>
+          <button id="btnTambahSiswa" class="btn btn-primary" style="background: #2563eb; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2); cursor: pointer;">
+            <span class="material-icons-outlined" style="font-size: 20px;">add</span> Tambah Siswa
+          </button>
         </div>
       </div>
-      
-      <div class="search-bar" style="margin-bottom: 24px;">
-        <div style="position: relative;">
-          <span class="material-icons-outlined" style="position: absolute; left: 12px; top: 10px; color: #999;">search</span>
-          <input type="text" class="form-input" placeholder="Cari nama siswa atau NIS..." style="width: 100%; padding: 10px 12px 10px 40px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box;">
+      <div style="display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap;">
+        <div style="flex: 1; min-width: 250px; position: relative;">
+          <span class="material-icons-outlined" style="position: absolute; left: 16px; top: 12px; color: #9ca3af; font-size: 20px;">search</span>
+          <input type="text" id="searchSiswa" placeholder="Cari nama siswa..." style="width: 100%; padding: 12px 16px 12px 44px; border: 1px solid #e5e7eb; border-radius: 12px; font-size: 14px; box-sizing: border-box; outline: none;">
+        </div>
+        <div style="min-width: 150px;">
+          <select id="filterKelas" style="width: 100%; padding: 12px 16px; border: 1px solid #e5e7eb; border-radius: 12px; font-size: 14px; background: white; cursor: pointer; outline: none;">
+            <option value="ALL">Semua Kelas</option>
+          </select>
         </div>
       </div>
-
-      <div id="siswaListContainer">
-        <p style="color:#666;">Memuat data siswa...</p>
+      <div style="background: white; border-radius: 16px; border: 1px solid #f3f4f6; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1); overflow: hidden;">
+        <table class="mutqin-table">
+          <thead style="background: #f9fafb;">
+            <tr>
+              <th style="width: 40px;"><input type="checkbox" id="checkAll" class="mutqin-checkbox"></th>
+              <th style="width: 50px;">#</th>
+              <th>NAMA SISWA</th>
+              <th>KELAS</th>
+              <th style="width: 120px;">AKSI</th>
+            </tr>
+          </thead>
+          <tbody id="siswaTableBody"><tr><td colspan="5" style="text-align:center; padding: 24px; color:#666;">Memuat data...</td></tr></tbody>
+        </table>
       </div>
-
-      <button id="btnTambahSiswa" class="btn btn-primary" style="position: fixed; bottom: 24px; right: 24px; background: #1a73e8; color: white; border: none; padding: 12px 24px; border-radius: 24px; font-weight: 500; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(26,115,232,0.3); cursor: pointer; z-index: 90;">
-        <span class="material-icons-outlined">add</span> Tambah Siswa
-      </button>
+      <div id="floatingActionBar" style="position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%) translateY(100px); opacity: 0; transition: all 0.3s; background: #1f2937; color: white; padding: 16px 24px; border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5); display: flex; align-items: center; gap: 24px; z-index: 90;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <span class="material-icons-outlined" style="color: #60a5fa;">check_circle</span>
+          <span id="selectedCount" style="font-weight: 600; font-size: 15px;">0 siswa dipilih</span>
+        </div>
+        <div style="width: 1px; height: 24px; background: #374151;"></div>
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <select id="bulkKelas" style="padding: 8px 12px; border-radius: 6px; border: 1px solid #4b5563; background: #374151; color: white; font-size: 14px; outline: none; cursor: pointer;">
+            <option value="" disabled selected>Pilih Kelas Tujuan...</option>
+          </select>
+          <button id="btnBulkUpdate" class="btn btn-primary" style="background: #3b82f6; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer;">Pindah Kelas</button>
+          <button id="btnBulkDelete" class="btn btn-outline" style="background: transparent; border: 1px solid #ef4444; color: #ef4444; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer;">Hapus</button>
+        </div>
+      </div>
+      <div id="modalSiswa" class="modal-overlay hidden" style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; display: none; align-items: center; justify-content: center;">
+        <div style="background: white; width: 100%; max-width: 450px; border-radius: 16px; padding: 24px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 id="modalTitle" style="margin: 0; font-size: 20px;">Tambah Siswa</h3>
+            <button class="btn-batal-modal" style="background: none; border: none; cursor: pointer; color: #9ca3af;"><span class="material-icons-outlined">close</span></button>
+          </div>
+          <form id="formSiswa">
+            <input type="hidden" id="siswaId">
+            <div class="form-group mb-4"><label style="font-weight: 600; display: block; margin-bottom: 8px;">Nama Lengkap</label><input type="text" id="siswaNama" style="width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; box-sizing: border-box;" required></div>
+            <div class="form-group mb-5"><label style="font-weight: 600; display: block; margin-bottom: 8px;">Kelas</label><select id="siswaKelas" style="width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; box-sizing: border-box;" required></select></div>
+            <div style="display: flex; gap: 12px; justify-content: flex-end;"><button type="button" class="btn-batal-modal" style="padding: 10px 20px; border-radius: 8px; border: 1px solid #d1d5db; background: white; cursor: pointer;">Batal</button><button type="submit" class="btn btn-primary" style="padding: 10px 20px; border-radius: 8px; border: none; background: #2563eb; color: white; cursor: pointer;">Simpan</button></div>
+          </form>
+        </div>
+      </div>
+      <div id="modalImport" class="modal-overlay hidden" style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; display: none; align-items: center; justify-content: center;">
+        <div style="background: white; width: 100%; max-width: 600px; border-radius: 16px; padding: 24px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h3 style="margin: 0; font-size: 20px;">Import Data Siswa</h3>
+            <button class="btn-batal-import" style="background: none; border: none; cursor: pointer; color: #9ca3af;"><span class="material-icons-outlined">close</span></button>
+          </div>
+          <form id="formImport">
+            <textarea id="importText" rows="10" placeholder="Paste data (Nama [Tab] Kelas)..." style="width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; box-sizing: border-box; resize: vertical;" required></textarea>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px;">
+              <span id="importPreview" style="font-size: 14px; color: #6b7280;"></span>
+              <div style="display: flex; gap: 12px;"><button type="button" class="btn-batal-import" style="padding: 10px 20px; border-radius: 8px; border: 1px solid #d1d5db; background: white; cursor: pointer;">Batal</button><button type="submit" id="btnProsesImport" class="btn btn-primary" style="padding: 10px 20px; border-radius: 8px; border: none; background: #10b981; color: white; cursor: pointer;">Proses</button></div>
+            </div>
+          </form>
+        </div>
+      </div>
     `;
 
     const html = adminLayout('siswa', content);
     window.Components.renderPage(html);
-    setTimeout(() => {
-      bindEvents();
-      fetchAndRenderList();
-    }, 200);
+    setTimeout(() => { bindEvents(); fetchAndRenderList(); }, 200);
   }
 
   function bindEvents() {
@@ -201,55 +292,61 @@
     const btnCloseDrawer = document.getElementById('btnCloseDrawer');
     const overlay = document.getElementById('adminDrawerOverlay');
     const sidebar = document.getElementById('adminSidebar');
-
     if (btnToggleDrawer) btnToggleDrawer.addEventListener('click', () => { sidebar.classList.add('open'); overlay.classList.remove('hidden'); });
     if (btnCloseDrawer) btnCloseDrawer.addEventListener('click', () => { sidebar.classList.remove('open'); overlay.classList.add('hidden'); });
     if (overlay) overlay.addEventListener('click', () => { sidebar.classList.remove('open'); overlay.classList.add('hidden'); });
 
-    const modal = document.getElementById('modalSiswa');
-    const form = document.getElementById('formSiswa');
+    const modalSiswa = document.getElementById('modalSiswa');
+    const modalImport = document.getElementById('modalImport');
+    document.getElementById('btnTambahSiswa').addEventListener('click', () => { document.getElementById('modalTitle').innerText = 'Tambah Siswa'; document.getElementById('formSiswa').reset(); document.getElementById('siswaId').value = ''; modalSiswa.classList.remove('hidden'); });
+    document.querySelectorAll('.btn-batal-modal').forEach(btn => btn.addEventListener('click', () => modalSiswa.classList.add('hidden')));
+    document.getElementById('btnImport').addEventListener('click', () => { document.getElementById('formImport').reset(); document.getElementById('importPreview').innerText = ''; modalImport.classList.remove('hidden'); });
+    document.querySelectorAll('.btn-batal-import').forEach(btn => btn.addEventListener('click', () => modalImport.classList.add('hidden')));
 
-    document.getElementById('btnTambahSiswa').addEventListener('click', () => {
-      document.getElementById('modalTitle').innerText = 'Tambah Siswa';
-      form.reset();
-      document.getElementById('siswaId').value = '';
-      modal.classList.remove('hidden');
-    });
+    document.getElementById('searchSiswa').addEventListener('input', renderTable);
+    document.getElementById('filterKelas').addEventListener('change', renderTable);
 
-    document.getElementById('btnBatal').addEventListener('click', () => {
-      modal.classList.add('hidden');
-    });
-
-    form.addEventListener('submit', async (e) => {
+    document.getElementById('formSiswa').addEventListener('submit', async (e) => {
       e.preventDefault();
       const id = document.getElementById('siswaId').value;
-      const data = {
-        nama: document.getElementById('siswaNama').value,
-        kelas_id: document.getElementById('siswaKelas').value,
-      };
+      const data = { nama: document.getElementById('siswaNama').value, kelas_id: document.getElementById('siswaKelas').value };
+      let res;
+      if (id) res = await window.supabase.from('siswa').update(data).eq('id', id);
+      else res = await window.supabase.from('siswa').insert([data]);
+      if (res.error) window.Components.toast('Gagal simpan', 'error');
+      else { window.Components.toast('Berhasil disimpan'); modalSiswa.classList.add('hidden'); fetchAndRenderList(); }
+    });
 
-      const submitBtn = form.querySelector('button[type="submit"]');
-      const originalText = submitBtn.innerText;
-      submitBtn.innerText = 'Menyimpan...';
-      submitBtn.disabled = true;
-
-      let error;
-      if (id) {
-        const res = await window.supabase.from('siswa').update(data).eq('id', id);
-        error = res.error;
-      } else {
-        const res = await window.supabase.from('siswa').insert([data]);
-        error = res.error;
+    document.getElementById('formImport').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const text = document.getElementById('importText').value.trim();
+      const inserts = text.split('\n').map(l => {
+        const parts = l.split('\t');
+        if (parts.length >= 2) {
+          const k = globalKelas.find(x => x.nama.toLowerCase() === parts[1].trim().toLowerCase());
+          return k ? { nama: parts[0].trim(), kelas_id: k.id } : null;
+        }
+        return null;
+      }).filter(Boolean);
+      if (inserts.length > 0) {
+        const { error } = await window.supabase.from('siswa').insert(inserts);
+        if (!error) { window.Components.toast('Import berhasil'); modalImport.classList.add('hidden'); fetchAndRenderList(); }
       }
-      
-      submitBtn.innerText = originalText;
-      submitBtn.disabled = false;
+    });
 
-      if (error) {
-        window.Components.toast('Gagal menyimpan', 'error');
-      } else {
-        window.Components.toast('Berhasil disimpan');
-        modal.classList.add('hidden');
+    document.getElementById('btnBulkDelete').addEventListener('click', async () => {
+      const ids = Array.from(document.querySelectorAll('.row-checkbox:checked')).map(cb => cb.value);
+      if (ids.length && confirm(`Hapus ${ids.length} siswa?`)) {
+        await window.supabase.from('siswa').delete().in('id', ids);
+        fetchAndRenderList();
+      }
+    });
+
+    document.getElementById('btnBulkUpdate').addEventListener('click', async () => {
+      const ids = Array.from(document.querySelectorAll('.row-checkbox:checked')).map(cb => cb.value);
+      const kId = document.getElementById('bulkKelas').value;
+      if (ids.length && kId) {
+        await window.supabase.from('siswa').update({ kelas_id: kId }).in('id', ids);
         fetchAndRenderList();
       }
     });
