@@ -244,6 +244,34 @@ window.APP_DATA = {
     });
   },
   
+  async getSiswaAbsenHariIni() {
+    const today = (await window.APP_DATA.getHariTanggal()).tanggal || new Date().toISOString().split('T')[0];
+    const { data, error } = await window.supabase
+      .from('absensi_piket')
+      .select(`
+        status,
+        siswa ( nama, kelas ( nama, jenjang, jurusan ) ),
+        laporan_piket!inner ( tanggal )
+      `)
+      .eq('laporan_piket.tanggal', today);
+      
+    if (error) {
+      console.error(error);
+      return [];
+    }
+    
+    return data.map(d => {
+      const s = d.siswa || {};
+      const k = s.kelas || {};
+      const namaKelas = k.nama || `${k.jenjang} ${k.jurusan}`.trim() || 'Unknown';
+      return {
+        nama: s.nama || 'Unknown',
+        kelas: namaKelas,
+        status: d.status
+      };
+    });
+  },
+  
   async getExportData(startDate, endDate) {
     let query = window.supabase
       .from('laporan_piket')

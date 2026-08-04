@@ -19,13 +19,9 @@
       .order('created_at', { ascending: false })
       .limit(10);
 
-    // Hitung jumlah siswa absen hari ini dari laporan guru ini
-    const today = new Date().toISOString().split('T')[0];
-    const { count: siswaAbsenHariIni } = await window.supabase
-      .from('absensi_piket')
-      .select('id, laporan_piket!inner(guru_id, tanggal)', { count: 'exact', head: true })
-      .eq('laporan_piket.guru_id', guruId)
-      .eq('laporan_piket.tanggal', today);
+    // Ambil semua daftar siswa absen hari ini secara global (seluruh sekolah)
+    const absenSiswa = await window.APP_DATA.getSiswaAbsenHariIni();
+    const siswaAbsenHariIni = absenSiswa.length;
 
     window.Components.hideLoading();
 
@@ -312,6 +308,22 @@
             </div>
             <div class="ios-action-label">Unduh<br/>Rekap Excel</div>
           </button>
+        </div>
+
+        <!-- Siswa Absen List -->
+        <div class="ios-section-header">Siswa Tidak Hadir Hari Ini</div>
+        <div class="ios-list" style="margin-bottom: 24px;">
+          ${absenSiswa.length > 0 ? absenSiswa.map(a => `
+            <div class="ios-list-item">
+              <div class="ios-list-content">
+                <div class="ios-list-title">${a.nama}</div>
+                <div class="ios-list-subtitle">${a.kelas}</div>
+              </div>
+              <div class="ios-list-right" style="color: #FF3B30;">
+                ${a.status}
+              </div>
+            </div>
+          `).join('') : '<div class="empty-state">Tidak ada siswa absen hari ini 🎉</div>'}
         </div>
 
         <!-- History List -->
