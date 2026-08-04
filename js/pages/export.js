@@ -279,7 +279,7 @@
           ];
           
           XLSX.utils.book_append_sheet(wb, ws, "Rekap Piket");
-          XLSX.writeFile(wb, \`Rekap_Piket_\${startDate}_to_\${endDate}.xlsx\`);
+          XLSX.writeFile(wb, `Rekap_Piket_${startDate}_to_${endDate}.xlsx`);
         } else {
           const { jsPDF } = window.jspdf;
           const doc = new jsPDF({ orientation: 'landscape' });
@@ -287,7 +287,7 @@
           doc.setFontSize(16);
           doc.text('Laporan Rekap Piket', 14, 15);
           doc.setFontSize(11);
-          doc.text(\`Periode: \${startDate} s/d \${endDate}\`, 14, 22);
+          doc.text(`Periode: ${startDate} s/d ${endDate}`, 14, 22);
 
           doc.autoTable({
             startY: 28,
@@ -298,7 +298,7 @@
             styles: { fontSize: 9 }
           });
 
-          doc.save(\`Rekap_Piket_\${startDate}_to_\${endDate}.pdf\`);
+          doc.save(`Rekap_Piket_${startDate}_to_${endDate}.pdf`);
         }
         
         window.Components.hideLoading();
