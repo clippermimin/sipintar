@@ -97,9 +97,9 @@ window.Components = {
     }
   },
   
-  // Prototype footer
+  // Footer
   footer() {
-    return `<div class="prototype-footer">Prototype v0.1 — For Client Discussion Only</div>`;
+    return ``;
   },
   
   // Step indicator for multi-step forms

@@ -173,7 +173,7 @@
         </div>
       </div>
       
-      ${window.Components.footer ? window.Components.footer() : '<div class="mt-5 text-center text-secondary prototype-footer">SIPINTER Prototype v1.0 &copy; 2026</div>'}
+      ${window.Components.footer ? window.Components.footer() : ''}
     `;
 
     const html = adminLayout('dashboard', content);
