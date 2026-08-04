@@ -89,6 +89,10 @@
   }
 
   async function render() {
+    if (window.APP_STATE.role !== 'admin') {
+      window.Router.navigate('/login');
+      return;
+    }
     const content = `
       <div style="margin-bottom: 24px;">
         <h1 style="margin: 0 0 8px 0; font-size: 24px; color: #333;">Laporan Piket</h1>
