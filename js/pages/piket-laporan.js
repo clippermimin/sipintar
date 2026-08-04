@@ -418,7 +418,6 @@
           sel.dispatchEvent(new Event('change'));
        }
     }
-    return blockId;
     
     if (blockCounter > 1) {
       document.querySelector(`#${blockId} .btn-remove-block`).addEventListener('click', function() {
@@ -460,6 +459,8 @@
         </div>
       `).join('');
     });
+    
+    return blockId;
   }
   
   function bindEvents() {
