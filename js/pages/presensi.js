@@ -1,240 +1,428 @@
 (function() {
-  let currentTab = 'Hadir'; // 'Hadir' or 'Izin'
-  let currentStep = 0;
-  
-  async function render() {
-    let content = '';
-    const hariTanggal = window.APP_DATA.getHariTanggal ? await window.APP_DATA.getHariTanggal() : 'Sabtu, 25 Juli 2026';
+  let currentTab = 'Hadir';
+  let capturedBlob = null;
+  let stream = null;
+  let gpsCoords = null;
+  let pengaturan = null;
 
-    // TAB BAR
-    const tabBar = currentStep < 3 ? `
-      <div style="display: flex; background: #fff; border-bottom: 1px solid var(--border); margin-bottom: 1rem;">
-        <button id="tab-hadir" style="flex: 1; padding: 12px; background: none; border: none; border-bottom: 3px solid ${currentTab === 'Hadir' ? 'var(--primary)' : 'transparent'}; color: ${currentTab === 'Hadir' ? 'var(--primary)' : 'var(--text-secondary)'}; font-weight: 600; cursor: pointer;">Presensi Hadir</button>
-        <button id="tab-izin" style="flex: 1; padding: 12px; background: none; border: none; border-bottom: 3px solid ${currentTab === 'Izin' ? 'var(--primary)' : 'transparent'}; color: ${currentTab === 'Izin' ? 'var(--primary)' : 'var(--text-secondary)'}; font-weight: 600; cursor: pointer;">Izin / Sakit</button>
-      </div>
-    ` : '';
-
-    if (currentTab === 'Hadir') {
-      if (currentStep === 0) {
-        content = `
-          <div class="page-content" style="padding-top: 1rem;">
-            ${window.Components.stepIndicator ? window.Components.stepIndicator(4, 0) : ''}
-            <div class="camera-frame" style="background: #111; border-radius: 12px; height: 350px; position: relative; margin: 2rem 0; overflow: hidden; display: flex; align-items: center; justify-content: center;">
-              <div class="face-placeholder" style="width: 200px; height: 250px; border: 2px dashed rgba(255,255,255,0.5); border-radius: 100px; position: relative; animation: pulse 2s infinite;"></div>
-              <style>
-                @keyframes pulse {
-                  0% { border-color: rgba(255,255,255,0.3); }
-                  50% { border-color: rgba(255,255,255,0.8); box-shadow: 0 0 15px rgba(255,255,255,0.2); }
-                  100% { border-color: rgba(255,255,255,0.3); }
-                }
-              </style>
-            </div>
-            <p style="text-align: center; color: var(--text-secondary, #666); margin-bottom: 2rem;">Posisikan wajah Anda di dalam lingkaran</p>
-            <button id="btnAmbilFoto" class="btn btn-primary btn-full btn-lg">Ambil Foto</button>
-          </div>
-        `;
-      } else if (currentStep === 1) {
-        content = `
-          <div class="page-content" style="padding-top: 1rem;">
-            ${window.Components.stepIndicator ? window.Components.stepIndicator(4, 1) : ''}
-            <div class="camera-frame" style="background: #111; border-radius: 12px; height: 350px; position: relative; margin: 2rem 0; overflow: hidden; display: flex; align-items: center; justify-content: center;">
-              <div class="face-placeholder" style="width: 200px; height: 250px; border: 2px solid #34a853; border-radius: 100px; background: rgba(52, 168, 83, 0.2); display: flex; align-items: center; justify-content: center;">
-                <span class="material-icons-outlined" style="color: #34a853; font-size: 4rem;">check_circle</span>
-              </div>
-              <div style="position: absolute; bottom: 1rem; width: 100%; text-align: center; color: white; background: rgba(0,0,0,0.5); padding: 0.5rem 0;">
-                Foto berhasil diambil
-              </div>
-            </div>
-            <button id="btnVerifikasiLokasi" class="btn btn-primary btn-full btn-lg">Verifikasi Lokasi</button>
-          </div>
-        `;
-      } else if (currentStep === 2) {
-        content = `
-          <div class="page-content" style="padding-top: 1rem;">
-            ${window.Components.stepIndicator ? window.Components.stepIndicator(4, 2) : ''}
-            
-            <div class="card location-verify" style="background: #e6f4ea; border: 1px solid #34a853; margin: 2rem 0; padding: 1.5rem; text-align: center; border-radius: 12px;">
-              <span class="material-icons-outlined" style="color: #34a853; font-size: 3rem; margin-bottom: 0.5rem;">check_circle</span>
-              <div style="color: #137333; font-weight: bold; font-size: 1.2rem; margin-bottom: 1rem;">Lokasi berhasil diverifikasi</div>
-              <div style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; color: #137333;">
-                <span class="material-icons-outlined">place</span>
-                <span>SMA Negeri 1 Surabaya</span>
-              </div>
-              <div style="font-size: 0.85rem; color: #137333; margin-top: 0.5rem;">Jarak: 15 meter dari titik sekolah</div>
-            </div>
-            
-            <div class="card" style="margin-bottom: 2rem; padding: 1rem;">
-              <div style="margin-bottom: 0.5rem;"><strong>Tanggal:</strong> ${hariTanggal}</div>
-              <div style="margin-bottom: 0.5rem;"><strong>Waktu:</strong> 06:45 WIB</div>
-              <div><strong>Status:</strong> Masuk</div>
-            </div>
-  
-            <button id="btnKirimPresensi" class="btn btn-primary btn-full btn-lg">Kirim Presensi</button>
-          </div>
-        `;
-      } else if (currentStep === 3) {
-        content = `
-          <div class="page-content success-screen" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 80vh; text-align: center;">
-            <span class="material-icons-outlined success-icon" style="color: #34a853; font-size: 6rem; margin-bottom: 1rem; animation: scaleIn 0.5s ease-out;">check_circle</span>
-            <style>
-              @keyframes scaleIn {
-                0% { transform: scale(0); opacity: 0; }
-                80% { transform: scale(1.1); opacity: 1; }
-                100% { transform: scale(1); opacity: 1; }
-              }
-            </style>
-            <h2 class="success-title" style="font-size: 1.75rem; margin-bottom: 0.5rem;">Presensi Berhasil!</h2>
-            <p class="success-subtitle" style="color: var(--text-secondary, #666); margin-bottom: 1.5rem;">Presensi masuk Anda telah tercatat</p>
-            <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; width: 100%; max-width: 300px; margin-bottom: 2rem;">
-              <strong>06:45 WIB</strong><br/>
-              <span style="font-size: 0.9rem; color: var(--text-secondary, #666);">${hariTanggal}</span>
-            </div>
-            <button id="btnKembaliDashboard" class="btn btn-primary btn-full btn-lg" style="max-width: 300px;">Kembali ke Dashboard</button>
-          </div>
-        `;
-      }
-    } else if (currentTab === 'Izin') {
-      content = `
-        <div class="page-content" style="padding-top: 1rem;">
-          <div class="card p-4">
-            <h3 style="margin-top: 0; margin-bottom: 16px; font-size: 18px;">Pengajuan Izin / Sakit</h3>
-            <form id="izin-form">
-              <div class="form-group mb-4">
-                <label class="form-label" style="font-weight: 600;">Jenis Ketidakhadiran</label>
-                <select id="jenis-izin" class="form-input" required>
-                  <option value="" disabled selected>-- Pilih Jenis --</option>
-                  <option value="Sakit">Sakit</option>
-                  <option value="Izin Pribadi">Izin Pribadi</option>
-                  <option value="Dinas Luar">Dinas Luar (DL)</option>
-                  <option value="Cuti">Cuti</option>
-                </select>
-              </div>
-
-              <div class="form-group mb-4">
-                <label class="form-label" style="font-weight: 600;">Tanggal</label>
-                <div style="display: flex; gap: 12px; align-items: center;">
-                  <input type="date" id="tgl-mulai" class="form-input" required>
-                  <span>s/d</span>
-                  <input type="date" id="tgl-selesai" class="form-input" required>
-                </div>
-              </div>
-
-              <div class="form-group mb-4">
-                <label class="form-label" style="font-weight: 600;">Alasan / Keterangan</label>
-                <textarea id="alasan-izin" class="form-input" rows="3" placeholder="Tuliskan keterangan detail..." required></textarea>
-              </div>
-
-              <div class="form-group mb-4">
-                <label class="form-label" style="font-weight: 600;">Lampiran Bukti (Opsional)</label>
-                <div class="upload-area" onclick="document.getElementById('bukti-izin').click()">
-                  <span class="material-icons-outlined" style="font-size: 32px; color: var(--text-secondary); margin-bottom: 8px;">upload_file</span>
-                  <p style="margin: 0; color: var(--text-secondary); font-size: 13px;">Upload Surat Dokter / Tugas (PDF/JPG)</p>
-                  <input type="file" id="bukti-izin" accept="image/*,.pdf" style="display: none;">
-                </div>
-              </div>
-
-              <button type="submit" id="btnKirimIzin" class="btn btn-primary btn-full btn-lg mt-4">Kirim Pengajuan</button>
-            </form>
-          </div>
-        </div>
-      `;
-    }
-
-    const html = `
-      <div class="page presensi-page">
-        ${currentStep < 3 ? window.Components.header({ title: 'Presensi Kehadiran', subtitle: 'SIPINTER', back: true, backPath: '/guru/dashboard' }) : ''}
-        ${tabBar}
-        ${content}
-      </div>
-    `;
-    window.Components.renderPage(html);
-    setTimeout(bindEvents, 200);
+  // ── Haversine distance (meters) ────────────────────────────────────────────
+  function haversineDistance(lat1, lng1, lat2, lng2) {
+    const R = 6371000;
+    const toRad = d => d * Math.PI / 180;
+    const dLat = toRad(lat2 - lat1);
+    const dLng = toRad(lng2 - lng1);
+    const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng/2)**2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   }
 
+  // ── Compress image via Canvas API ──────────────────────────────────────────
+  function compressImageToBlob(imgDataUrl, maxW = 640, maxH = 480, quality = 0.7) {
+    return new Promise(resolve => {
+      const img = new Image();
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > maxW) { height = Math.round(height * maxW / width); width = maxW; }
+        if (height > maxH) { width = Math.round(width * maxH / height); height = maxH; }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        canvas.toBlob(blob => resolve(blob), 'image/jpeg', quality);
+      };
+      img.src = imgDataUrl;
+    });
+  }
+
+  // ── Stop camera stream ──────────────────────────────────────────────────────
+  function stopStream() {
+    if (stream) {
+      stream.getTracks().forEach(t => t.stop());
+      stream = null;
+    }
+  }
+
+  // ── Step 0: Live Camera View ────────────────────────────────────────────────
+  function renderStep0() {
+    return `
+      <div style="padding: 20px;">
+        <div style="background: #000; border-radius: 20px; overflow: hidden; position: relative; height: 360px; display: flex; align-items: center; justify-content: center;">
+          <video id="cameraVideo" autoplay playsinline muted style="width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1);"></video>
+          <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none;">
+            <div style="width: 200px; height: 250px; border: 3px solid rgba(255,255,255,0.7); border-radius: 100px; animation: pulse 2s infinite;"></div>
+          </div>
+          <div id="gpsStatus" style="position: absolute; bottom: 12px; left: 0; right: 0; text-align: center; color: white; font-size: 13px; font-weight: 600;">
+            <span style="background: rgba(0,0,0,0.6); padding: 4px 12px; border-radius: 20px;">📡 Mendeteksi GPS...</span>
+          </div>
+        </div>
+        <p style="text-align: center; color: #8E8E93; font-size: 14px; margin: 16px 0;">Posisikan wajah Anda di dalam lingkaran</p>
+        <button id="btnAmbilFoto" class="ios-btn-primary" disabled style="opacity: 0.5;">
+          <span class="material-icons-outlined">photo_camera</span> Ambil Foto
+        </button>
+      </div>`;
+  }
+
+  // ── Step 1: Confirm & submit ────────────────────────────────────────────────
+  function renderStep1(previewUrl, jarak, dalamRadius) {
+    const statusColor = dalamRadius ? '#34C759' : '#FF3B30';
+    const statusText = dalamRadius ? '✅ Dalam area sekolah' : '❌ Di luar area sekolah';
+    return `
+      <div style="padding: 20px;">
+        <div style="border-radius: 20px; overflow: hidden; height: 300px; position: relative; background: #000;">
+          <img src="${previewUrl}" style="width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1);">
+          <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none;">
+            <div style="width: 180px; height: 225px; border: 3px solid ${statusColor}; border-radius: 100px;"></div>
+          </div>
+        </div>
+        <div style="background: white; border-radius: 16px; padding: 16px; margin-top: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.06);">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+            <span style="color: #8E8E93; font-size: 14px;">Status Lokasi</span>
+            <span style="font-size: 14px; font-weight: 700; color: ${statusColor};">${statusText}</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+            <span style="color: #8E8E93; font-size: 14px;">Jarak dari Sekolah</span>
+            <span style="font-size: 14px; font-weight: 600;">${Math.round(jarak)} meter</span>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: #8E8E93; font-size: 14px;">Waktu</span>
+            <span style="font-size: 14px; font-weight: 600;" id="waktuSekarang">--:--</span>
+          </div>
+        </div>
+        ${dalamRadius ? `
+          <button id="btnKirimPresensi" class="ios-btn-primary" style="margin-top: 16px;">
+            <span class="material-icons-outlined">check_circle</span> Konfirmasi & Kirim Presensi
+          </button>
+          <button id="btnUlangFoto" class="ios-btn-secondary" style="margin-top: 10px;">
+            <span class="material-icons-outlined">refresh</span> Ulang Foto
+          </button>
+        ` : `
+          <div style="background: #FFF2F2; border-radius: 12px; padding: 14px; margin-top: 16px; border: 1px solid #FFCDD2;">
+            <p style="margin: 0; color: #C62828; font-size: 14px; text-align: center; font-weight: 600;">
+              Anda berada di luar area sekolah. Silakan ajukan Izin / Sakit.
+            </p>
+          </div>
+          <button id="btnKeIzin" class="ios-btn-warning" style="margin-top: 12px;">
+            <span class="material-icons-outlined">edit_note</span> Ajukan Izin / Sakit
+          </button>
+          <button id="btnUlangFoto" class="ios-btn-secondary" style="margin-top: 10px;">
+            <span class="material-icons-outlined">refresh</span> Coba Lagi
+          </button>
+        `}
+      </div>`;
+  }
+
+  // ── Step 2: Success ─────────────────────────────────────────────────────────
+  function renderSuccess(waktu) {
+    return `
+      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 70vh; text-align: center; padding: 24px;">
+        <div style="width: 100px; height: 100px; border-radius: 50%; background: linear-gradient(135deg, #34C759, #00C7BE); display: flex; align-items: center; justify-content: center; margin-bottom: 24px; box-shadow: 0 8px 24px rgba(52,199,89,0.4); animation: scaleIn 0.5s cubic-bezier(0.34,1.56,0.64,1);">
+          <span class="material-icons-outlined" style="font-size: 52px; color: white;">check</span>
+        </div>
+        <h2 style="font-size: 26px; font-weight: 800; margin: 0 0 8px;">Presensi Berhasil!</h2>
+        <p style="color: #8E8E93; margin: 0 0 24px;">Kehadiran Anda telah tercatat dengan aman.</p>
+        <div style="background: white; border-radius: 16px; padding: 20px 28px; box-shadow: 0 4px 16px rgba(0,0,0,0.06);">
+          <div style="font-size: 32px; font-weight: 800; color: #34C759;">${waktu}</div>
+          <div style="font-size: 13px; color: #8E8E93; margin-top: 4px;">Waktu Masuk</div>
+        </div>
+        <button id="btnKembaliDashboard" class="ios-btn-primary" style="margin-top: 32px; max-width: 280px;">
+          Kembali ke Dashboard
+        </button>
+      </div>`;
+  }
+
+  // ── Izin/Sakit Form ─────────────────────────────────────────────────────────
+  function renderIzinForm() {
+    return `
+      <div style="padding: 20px;">
+        <div style="background: white; border-radius: 20px; padding: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.05);">
+          <h3 style="margin: 0 0 20px; font-size: 18px; font-weight: 700;">Pengajuan Izin / Sakit</h3>
+          <form id="izin-form">
+            <div style="margin-bottom: 16px;">
+              <label style="display: block; font-size: 13px; font-weight: 600; color: #8E8E93; margin-bottom: 6px; text-transform: uppercase;">Jenis</label>
+              <select id="jenis-izin" class="ios-presensi-input" required>
+                <option value="" disabled selected>-- Pilih Jenis --</option>
+                <option value="Sakit">Sakit</option>
+                <option value="Izin Pribadi">Izin Pribadi</option>
+                <option value="Dinas Luar">Dinas Luar (DL)</option>
+                <option value="Cuti">Cuti</option>
+              </select>
+            </div>
+            <div style="margin-bottom: 16px;">
+              <label style="display: block; font-size: 13px; font-weight: 600; color: #8E8E93; margin-bottom: 6px; text-transform: uppercase;">Alasan / Keterangan</label>
+              <textarea id="alasan-izin" class="ios-presensi-input" rows="4" placeholder="Tuliskan keterangan detail..." required></textarea>
+            </div>
+            <button type="submit" id="btnKirimIzin" class="ios-btn-primary">
+              <span class="material-icons-outlined">send</span> Kirim Pengajuan
+            </button>
+          </form>
+        </div>
+      </div>`;
+  }
+
+  // ── Already Attended Banner ─────────────────────────────────────────────────
+  function renderSudahPresensi(presensi) {
+    const statusColor = { 'Hadir': '#34C759', 'Sakit': '#FF9500', 'Izin Pribadi': '#007AFF', 'Dinas Luar': '#AF52DE', 'Cuti': '#FF3B30' };
+    const color = statusColor[presensi.status] || '#34C759';
+    return `
+      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 70vh; text-align: center; padding: 24px;">
+        <div style="width: 90px; height: 90px; border-radius: 50%; background: ${color}22; border: 3px solid ${color}; display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+          <span class="material-icons-outlined" style="font-size: 44px; color: ${color};">verified</span>
+        </div>
+        <h2 style="font-size: 22px; font-weight: 800; margin: 0 0 8px;">Sudah Presensi Hari Ini</h2>
+        <p style="color: #8E8E93; font-size: 14px; margin: 0 0 24px;">Data kehadiran Anda sudah tercatat.</p>
+        <div style="background: white; border-radius: 16px; padding: 20px 28px; box-shadow: 0 4px 16px rgba(0,0,0,0.06); min-width: 220px;">
+          <div style="font-size: 28px; font-weight: 800; color: ${color};">${presensi.waktu ? presensi.waktu.substring(0,5) : '--:--'}</div>
+          <div style="font-size: 13px; color: #8E8E93; margin: 4px 0;">Waktu Masuk</div>
+          <div style="display: inline-block; background: ${color}22; color: ${color}; border-radius: 20px; padding: 4px 14px; font-size: 13px; font-weight: 700; margin-top: 8px;">${presensi.status}</div>
+        </div>
+        <button id="btnKembaliDashboard" class="ios-btn-primary" style="margin-top: 32px; max-width: 280px;">
+          Kembali ke Dashboard
+        </button>
+      </div>`;
+  }
+
+  // ── Main Render ─────────────────────────────────────────────────────────────
+  async function render() {
+    window.Components.showLoading('Memuat...');
+    capturedBlob = null;
+    gpsCoords = null;
+
+    const guru = window.APP_STATE.currentGuru || {};
+
+    // Cek apakah sudah presensi hari ini
+    const sudahPresensi = await window.APP_DATA.getPresensiHariIni(guru.id).catch(() => null);
+
+    window.Components.hideLoading();
+
+    const styles = `
+      <style>
+        @keyframes pulse { 0%,100% { border-color: rgba(255,255,255,0.4); } 50% { border-color: white; box-shadow: 0 0 20px rgba(255,255,255,0.3); } }
+        @keyframes scaleIn { 0% { transform: scale(0); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        .ios-presensi-page { background: #F2F2F7; min-height: 100vh; padding-bottom: 40px; font-family: 'Inter', -apple-system, sans-serif; }
+        .ios-presensi-nav { padding: 48px 20px 16px; display: flex; align-items: center; gap: 12px; background: rgba(242,242,247,0.85); backdrop-filter: blur(20px); position: sticky; top: 0; z-index: 10; }
+        .ios-presensi-back { width: 40px; height: 40px; border-radius: 50%; background: white; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.08); color: #007AFF; cursor: pointer; border: none; }
+        .ios-presensi-title { font-size: 22px; font-weight: 800; margin: 0; color: #000; }
+        .ios-tab-bar { display: flex; background: white; margin: 0 20px 20px; border-radius: 14px; padding: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .ios-tab { flex: 1; padding: 10px; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; background: transparent; color: #8E8E93; }
+        .ios-tab.active { background: #007AFF; color: white; box-shadow: 0 2px 8px rgba(0,122,255,0.3); }
+        .ios-btn-primary { width: 100%; padding: 16px; background: #007AFF; color: white; border: none; border-radius: 14px; font-size: 16px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 16px rgba(0,122,255,0.3); transition: transform 0.15s; }
+        .ios-btn-primary:active { transform: scale(0.97); }
+        .ios-btn-primary:disabled { opacity: 0.45; }
+        .ios-btn-secondary { width: 100%; padding: 14px; background: #F2F2F7; color: #007AFF; border: none; border-radius: 14px; font-size: 15px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .ios-btn-warning { width: 100%; padding: 16px; background: #FF9500; color: white; border: none; border-radius: 14px; font-size: 16px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 16px rgba(255,149,0,0.3); }
+        .ios-presensi-input { width: 100%; background: #F2F2F7; border: none; border-radius: 12px; padding: 14px; font-size: 15px; font-family: inherit; color: #000; outline: none; box-sizing: border-box; }
+      </style>
+    `;
+
+    if (sudahPresensi) {
+      const html = `${styles}<div class="page ios-presensi-page">
+        <div class="ios-presensi-nav">
+          <button class="ios-presensi-back" onclick="window.Router.navigate('/guru/dashboard')">
+            <span class="material-icons-outlined">arrow_back</span>
+          </button>
+          <h1 class="ios-presensi-title">Presensi Kehadiran</h1>
+        </div>
+        ${renderSudahPresensi(sudahPresensi)}
+      </div>`;
+      window.Components.renderPage(html);
+      setTimeout(() => {
+        document.getElementById('btnKembaliDashboard')?.addEventListener('click', () => window.Router.navigate('/guru/dashboard'));
+      }, 100);
+      return;
+    }
+
+    const html = `${styles}<div class="page ios-presensi-page">
+      <div class="ios-presensi-nav">
+        <button class="ios-presensi-back" onclick="window.Router.navigate('/guru/dashboard')">
+          <span class="material-icons-outlined">arrow_back</span>
+        </button>
+        <h1 class="ios-presensi-title">Presensi Kehadiran</h1>
+      </div>
+      <div class="ios-tab-bar">
+        <button class="ios-tab ${currentTab === 'Hadir' ? 'active' : ''}" id="tab-hadir">📸 Presensi Hadir</button>
+        <button class="ios-tab ${currentTab === 'Izin' ? 'active' : ''}" id="tab-izin">📝 Izin / Sakit</button>
+      </div>
+      <div id="presensi-content">
+        ${currentTab === 'Hadir' ? renderStep0() : renderIzinForm()}
+      </div>
+    </div>`;
+
+    window.Components.renderPage(html);
+    setTimeout(() => {
+      bindEvents();
+      if (currentTab === 'Hadir') initCamera();
+    }, 100);
+  }
+
+  // ── Init Camera & GPS ───────────────────────────────────────────────────────
+  async function initCamera() {
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+      const video = document.getElementById('cameraVideo');
+      if (video) { video.srcObject = stream; }
+    } catch (e) {
+      window.Components.toast('Izin kamera ditolak. Aktifkan kamera di pengaturan browser.', 'error');
+    }
+
+    // Get GPS in parallel
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        gpsCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        const p = pengaturan || await window.APP_DATA.getPengaturanSekolah();
+        pengaturan = p;
+        const jarak = haversineDistance(gpsCoords.lat, gpsCoords.lng, p.lat_sekolah, p.lng_sekolah);
+        const el = document.getElementById('gpsStatus');
+        if (el) {
+          const dalamArea = jarak <= p.radius_meter;
+          el.innerHTML = dalamArea
+            ? `<span style="background: rgba(52,199,89,0.9); padding: 4px 12px; border-radius: 20px;">✅ Dalam area sekolah (${Math.round(jarak)}m)</span>`
+            : `<span style="background: rgba(255,59,48,0.85); padding: 4px 12px; border-radius: 20px;">❌ Di luar area (${Math.round(jarak)}m)</span>`;
+        }
+        const btn = document.getElementById('btnAmbilFoto');
+        if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
+      },
+      (err) => {
+        const el = document.getElementById('gpsStatus');
+        if (el) el.innerHTML = `<span style="background: rgba(255,149,0,0.9); padding: 4px 12px; border-radius: 20px;">⚠️ GPS tidak tersedia</span>`;
+        const btn = document.getElementById('btnAmbilFoto');
+        if (btn) { btn.disabled = false; btn.style.opacity = '1'; } // Tetap boleh foto, GPS gagal
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  }
+
+  // ── Capture Photo ───────────────────────────────────────────────────────────
+  async function capturePhoto() {
+    const video = document.getElementById('cameraVideo');
+    if (!video) return;
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth || 640;
+    canvas.height = video.videoHeight || 480;
+    canvas.getContext('2d').drawImage(video, 0, 0);
+    const dataUrl = canvas.toDataURL('image/jpeg');
+    capturedBlob = await compressImageToBlob(dataUrl);
+    stopStream();
+    return dataUrl;
+  }
+
+  // ── Bind Events ─────────────────────────────────────────────────────────────
   function bindEvents() {
-    // Tab Listeners
     const tabHadir = document.getElementById('tab-hadir');
     const tabIzin = document.getElementById('tab-izin');
-    
-    if (tabHadir) tabHadir.addEventListener('click', () => { currentTab = 'Hadir'; currentStep = 0; render(); });
-    if (tabIzin) tabIzin.addEventListener('click', () => { currentTab = 'Izin'; currentStep = 0; render(); });
 
-    // Hadir Flow Listeners
+    tabHadir?.addEventListener('click', () => { currentTab = 'Hadir'; stopStream(); render(); });
+    tabIzin?.addEventListener('click', () => { currentTab = 'Izin'; stopStream(); render(); });
+
     if (currentTab === 'Hadir') {
-      if (currentStep === 0) {
-        document.getElementById('btnAmbilFoto')?.addEventListener('click', () => {
-          if (window.Components.showLoading) window.Components.showLoading();
-          setTimeout(() => {
-            if (window.Components.hideLoading) window.Components.hideLoading();
-            currentStep = 1;
-            render();
-          }, 1000);
+      document.getElementById('btnAmbilFoto')?.addEventListener('click', async () => {
+        const previewUrl = await capturePhoto();
+
+        // Hitung GPS & tampilkan konfirmasi
+        const p = pengaturan || await window.APP_DATA.getPengaturanSekolah();
+        pengaturan = p;
+        let jarak = 9999;
+        let dalamRadius = false;
+        if (gpsCoords) {
+          jarak = haversineDistance(gpsCoords.lat, gpsCoords.lng, p.lat_sekolah, p.lng_sekolah);
+          dalamRadius = jarak <= p.radius_meter;
+        }
+
+        document.getElementById('presensi-content').innerHTML = renderStep1(previewUrl, jarak, dalamRadius);
+
+        // Update jam sekarang
+        const waktuEl = document.getElementById('waktuSekarang');
+        if (waktuEl) {
+          const now = new Date();
+          waktuEl.textContent = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')} WIB`;
+        }
+
+        document.getElementById('btnUlangFoto')?.addEventListener('click', () => {
+          capturedBlob = null;
+          document.getElementById('presensi-content').innerHTML = renderStep0();
+          bindHadirInner();
+          initCamera();
         });
-      } else if (currentStep === 1) {
-        document.getElementById('btnVerifikasiLokasi')?.addEventListener('click', () => {
-          if (window.Components.showLoading) window.Components.showLoading('Memverifikasi lokasi...');
-          setTimeout(() => {
-            if (window.Components.hideLoading) window.Components.hideLoading();
-            currentStep = 2;
-            render();
-          }, 1500);
+
+        document.getElementById('btnKeIzin')?.addEventListener('click', () => {
+          currentTab = 'Izin';
+          stopStream();
+          render();
         });
-      } else if (currentStep === 2) {
-        document.getElementById('btnKirimPresensi')?.addEventListener('click', () => {
-          if (window.Components.showLoading) window.Components.showLoading('Mengirim presensi...');
-          setTimeout(() => {
-            if (window.Components.hideLoading) window.Components.hideLoading();
-            if (window.APP_STATE) window.APP_STATE.presensiDone = true;
-            currentStep = 3;
-            render();
-            
-            setTimeout(() => {
-              if (currentStep === 3) window.Router.navigate('/guru/dashboard');
-            }, 2500);
-          }, 1000);
-        });
-      } else if (currentStep === 3) {
-        document.getElementById('btnKembaliDashboard')?.addEventListener('click', () => {
-          window.Router.navigate('/guru/dashboard');
-        });
-      }
-    } 
-    // Izin Flow Listeners
-    else if (currentTab === 'Izin') {
-      const izinForm = document.getElementById('izin-form');
-      if (izinForm) {
-        izinForm.addEventListener('submit', async (e) => {
-          e.preventDefault();
-          
-          const btnSubmit = document.getElementById('btnKirimIzin');
-          btnSubmit.innerHTML = 'Mengirim...';
-          btnSubmit.disabled = true;
-          
-          const data = {
-            guru_id: window.APP_STATE?.currentGuru?.id || 'd-guru-1',
-            jenis: document.getElementById('jenis-izin').value,
-            tgl_mulai: document.getElementById('tgl-mulai').value,
-            tgl_selesai: document.getElementById('tgl-selesai').value,
-            alasan: document.getElementById('alasan-izin').value
-          };
-          
+
+        document.getElementById('btnKirimPresensi')?.addEventListener('click', async () => {
+          const btn = document.getElementById('btnKirimPresensi');
+          btn.innerHTML = '<span class="material-icons-outlined" style="animation: spin 1s linear infinite;">refresh</span> Menyimpan...';
+          btn.disabled = true;
           try {
-            await window.APP_DATA.submitIzinGuru(data);
-            window.Components.toast('Pengajuan berhasil dikirim! Menunggu konfirmasi Kepsek/Admin.', 'success');
-            setTimeout(() => window.Router.navigate('/guru/dashboard'), 2000);
+            const result = await window.APP_DATA.submitPresensi({
+              status: 'Hadir',
+              fotoBlob: capturedBlob,
+              latitude: gpsCoords?.lat || null,
+              longitude: gpsCoords?.lng || null,
+              catatan: null
+            });
+            window.APP_STATE.presensiDone = true;
+            const now = new Date();
+            const waktu = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+            document.getElementById('presensi-content').innerHTML = renderSuccess(waktu + ' WIB');
+            document.getElementById('btnKembaliDashboard')?.addEventListener('click', () => window.Router.navigate('/guru/dashboard'));
+            setTimeout(() => window.Router.navigate('/guru/dashboard'), 3000);
           } catch (err) {
-            window.Components.toast('Gagal mengirim pengajuan', 'error');
-            btnSubmit.innerHTML = 'Kirim Pengajuan';
-            btnSubmit.disabled = false;
+            console.error(err);
+            window.Components.toast('Gagal menyimpan presensi: ' + (err.message || err), 'error');
+            btn.innerHTML = '<span class="material-icons-outlined">check_circle</span> Konfirmasi & Kirim Presensi';
+            btn.disabled = false;
           }
         });
-      }
+      });
     }
+
+    if (currentTab === 'Izin') {
+      document.getElementById('izin-form')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('btnKirimIzin');
+        btn.innerHTML = 'Mengirim...';
+        btn.disabled = true;
+        try {
+          await window.APP_DATA.submitPresensi({
+            status: document.getElementById('jenis-izin').value,
+            catatan: document.getElementById('alasan-izin').value,
+            fotoBlob: null,
+            latitude: null,
+            longitude: null
+          });
+          window.Components.toast('Pengajuan berhasil dikirim!', 'success');
+          setTimeout(() => window.Router.navigate('/guru/dashboard'), 1500);
+        } catch (err) {
+          window.Components.toast('Gagal: ' + (err.message || err), 'error');
+          btn.innerHTML = '<span class="material-icons-outlined">send</span> Kirim Pengajuan';
+          btn.disabled = false;
+        }
+      });
+    }
+  }
+
+  function bindHadirInner() {
+    document.getElementById('btnAmbilFoto')?.addEventListener('click', async () => {
+      const previewUrl = await capturePhoto();
+      const p = pengaturan || await window.APP_DATA.getPengaturanSekolah();
+      pengaturan = p;
+      let jarak = 9999;
+      let dalamRadius = false;
+      if (gpsCoords) {
+        jarak = haversineDistance(gpsCoords.lat, gpsCoords.lng, p.lat_sekolah, p.lng_sekolah);
+        dalamRadius = jarak <= p.radius_meter;
+      }
+      document.getElementById('presensi-content').innerHTML = renderStep1(previewUrl, jarak, dalamRadius);
+      bindEvents();
+    });
   }
 
   window.Router.register('/guru/presensi', () => {
-    currentStep = 0;
     currentTab = 'Hadir';
+    capturedBlob = null;
+    gpsCoords = null;
+    pengaturan = null;
+    stopStream();
     render();
   });
 })();

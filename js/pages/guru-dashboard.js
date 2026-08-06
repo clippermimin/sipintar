@@ -17,9 +17,15 @@
     else if (hour >= 15 && hour < 18) greeting = 'Selamat Sore';
     else if (hour >= 18) greeting = 'Selamat Malam';
 
-    const isPresensiDone = window.APP_STATE.presensiDone;
-    const hariTanggal = window.APP_DATA.getHariTanggal ? await window.APP_DATA.getHariTanggal() : 'Senin, 1 Januari 2026';
-    const aktivitas = window.APP_DATA.getAktivitasGuru ? await window.APP_DATA.getAktivitasGuru() : [];
+    const [hariTanggal, aktivitas, presensiHariIni] = await Promise.all([
+      window.APP_DATA.getHariTanggal ? window.APP_DATA.getHariTanggal() : Promise.resolve('Senin, 1 Januari 2026'),
+      window.APP_DATA.getAktivitasGuru ? window.APP_DATA.getAktivitasGuru() : Promise.resolve([]),
+      window.APP_DATA.getPresensiHariIni(guru.id).catch(() => null)
+    ]);
+    
+    const isPresensiDone = !!presensiHariIni;
+    if (isPresensiDone) window.APP_STATE.presensiDone = true;
+    const presensiWaktu = presensiHariIni?.waktu ? presensiHariIni.waktu.substring(0, 5) : null;
     
     const html = `
       <style>
@@ -235,7 +241,9 @@
                 ${isPresensiDone ? 'Presensi Selesai' : 'Belum Presensi'}
               </div>
               <div style="font-size: 14px; opacity: 0.9; font-weight: 400;">
-                ${isPresensiDone ? 'Anda sudah absen masuk.' : 'Silakan ketuk tombol di bawah.'}
+                ${isPresensiDone 
+                  ? (presensiWaktu ? `Masuk pukul ${presensiWaktu} WIB` : 'Anda sudah absen masuk.')
+                  : 'Silakan ketuk tombol di bawah.'}
               </div>
             </div>
           </div>

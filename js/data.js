@@ -196,14 +196,108 @@ window.APP_DATA = {
   },
   
   async submitIzinGuru(izinData) {
-    // dummy submit for izin (future feature)
-    return new Promise(resolve => {
-      setTimeout(() => {
-        resolve({ id: 'izin-' + Date.now(), status: 'Menunggu Konfirmasi', ...izinData });
-      }, 800);
+    // Wrapper ke submitPresensi untuk Izin/Sakit dari luar area
+    return this.submitPresensi({
+      status: izinData.jenis, // 'Sakit', 'Izin Pribadi', 'Dinas Luar', 'Cuti'
+      catatan: izinData.alasan,
+      foto_url: null,
+      latitude: null,
+      longitude: null
     });
   },
-  
+
+  async submitPresensi(data) {
+    const guru = window.APP_STATE.currentGuru || {};
+    const now = new Date();
+    const getLocal = (d, type) => {
+      if (type === 'date') return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      if (type === 'time') return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;
+    };
+
+    let foto_url = null;
+    // Upload foto jika ada (sudah berupa blob terkompresi)
+    if (data.fotoBlob) {
+      const fileName = `${guru.id}_${Date.now()}.jpg`;
+      const { data: uploadData, error: uploadErr } = await window.supabase.storage
+        .from('presensi-foto')
+        .upload(fileName, data.fotoBlob, { contentType: 'image/jpeg', upsert: false });
+      if (uploadErr) {
+        console.error('Upload foto gagal:', uploadErr);
+      } else {
+        const { data: urlData } = window.supabase.storage.from('presensi-foto').getPublicUrl(fileName);
+        foto_url = urlData?.publicUrl || null;
+      }
+    }
+
+    const { data: result, error } = await window.supabase
+      .from('presensi')
+      .insert({
+        guru_id: guru.id,
+        tanggal: getLocal(now, 'date'),
+        waktu: getLocal(now, 'time'),
+        status: data.status,
+        foto_url: foto_url,
+        latitude: data.latitude || null,
+        longitude: data.longitude || null,
+        catatan: data.catatan || null
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return result;
+  },
+
+  async getPresensiHariIni(guruId) {
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+    const { data, error } = await window.supabase
+      .from('presensi')
+      .select('*')
+      .eq('guru_id', guruId)
+      .eq('tanggal', today)
+      .maybeSingle();
+    if (error) { console.error(error); return null; }
+    return data;
+  },
+
+  async getPengaturanSekolah() {
+    const { data, error } = await window.supabase
+      .from('pengaturan_sekolah')
+      .select('*')
+      .limit(1)
+      .single();
+    if (error || !data) {
+      // Default fallback jika tabel belum ada
+      return { nama_sekolah: 'Sekolah', lat_sekolah: -6.2088, lng_sekolah: 106.8456, radius_meter: 200 };
+    }
+    return data;
+  },
+
+  async updatePengaturanSekolah(id, updateData) {
+    const { data, error } = await window.supabase
+      .from('pengaturan_sekolah')
+      .update({ ...updateData, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async getRekapPresensi(startDate, endDate) {
+    let query = window.supabase
+      .from('presensi')
+      .select('*, profiles!guru_id(nama, nip)')
+      .order('tanggal', { ascending: false })
+      .order('waktu', { ascending: false });
+    if (startDate) query = query.gte('tanggal', startDate);
+    if (endDate) query = query.lte('tanggal', endDate);
+    const { data, error } = await query;
+    if (error) { console.error(error); return []; }
+    return data || [];
+  },
+
   async getLaporanPiket() {
     const { data, error } = await window.supabase
       .from('laporan_piket')

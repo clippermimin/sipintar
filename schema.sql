@@ -111,3 +111,50 @@ INSERT INTO kelas (id, nama, jenjang, jurusan) VALUES
 INSERT INTO siswa (kelas_id, nama) VALUES
 ('x-ipa-1', 'Ahmad Fauzi'), ('x-ipa-1', 'Budi Santoso'),
 ('x-ips-1', 'Andi Saputra'), ('x-ips-1', 'Bella Oktavia');
+
+
+-- =============================================================
+-- MIGRATION: Fitur Presensi Guru
+-- Jalankan di Supabase Dashboard > SQL Editor
+-- =============================================================
+
+-- 7. Tabel Presensi Guru
+CREATE TABLE IF NOT EXISTS presensi (
+  id          UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  guru_id     UUID REFERENCES profiles(id) ON DELETE CASCADE,
+  tanggal     DATE NOT NULL,
+  waktu       TIME NOT NULL,
+  status      TEXT NOT NULL CHECK (status IN ('Hadir', 'Sakit', 'Izin Pribadi', 'Dinas Luar', 'Cuti')),
+  foto_url    TEXT,
+  latitude    FLOAT,
+  longitude   FLOAT,
+  catatan     TEXT,
+  created_at  TIMESTAMPTZ DEFAULT now()
+);
+
+-- 8. Tabel Pengaturan Sekolah
+CREATE TABLE IF NOT EXISTS pengaturan_sekolah (
+  id              UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  nama_sekolah    TEXT DEFAULT 'Sekolah',
+  lat_sekolah     FLOAT NOT NULL DEFAULT -6.2088,
+  lng_sekolah     FLOAT NOT NULL DEFAULT 106.8456,
+  radius_meter    INTEGER NOT NULL DEFAULT 200,
+  updated_at      TIMESTAMPTZ DEFAULT now()
+);
+
+-- Default 1 baris pengaturan
+INSERT INTO pengaturan_sekolah (nama_sekolah) VALUES ('Sekolah') ON CONFLICT DO NOTHING;
+
+-- RLS Policies untuk presensi
+ALTER TABLE presensi ENABLE ROW LEVEL SECURITY;
+ALTER TABLE pengaturan_sekolah ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Allow select presensi" ON presensi FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Allow insert presensi" ON presensi FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY "Allow update presensi" ON presensi FOR UPDATE TO authenticated USING (true);
+
+CREATE POLICY "Allow select pengaturan" ON pengaturan_sekolah FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Allow update pengaturan" ON pengaturan_sekolah FOR UPDATE TO authenticated USING (true);
+
+-- Buat Storage Bucket 'presensi-foto' melalui Supabase Dashboard > Storage
+-- Aktifkan Public Access pada bucket tersebut
