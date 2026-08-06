@@ -198,24 +198,24 @@
 
     const totalPages = Math.ceil(totalItems / itemsPerPage);
     
-    let paginationHtml = \`
+    let paginationHtml = `
       <div style="font-size: 14px; color: #6b7280;">
-        Menampilkan \${Math.min((currentPage - 1) * itemsPerPage + 1, totalItems)} - \${Math.min(currentPage * itemsPerPage, totalItems)} dari \${totalItems} siswa
+        Menampilkan ${Math.min((currentPage - 1) * itemsPerPage + 1, totalItems)} - ${Math.min(currentPage * itemsPerPage, totalItems)} dari ${totalItems} siswa
       </div>
       <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
         <select id="itemsPerPageSelect" style="padding: 6px 12px; border: 1px solid #e5e7eb; border-radius: 6px; font-size: 14px; background: white; cursor: pointer; outline: none;">
-          <option value="10" \${itemsPerPage === 10 ? 'selected' : ''}>10 / halaman</option>
-          <option value="20" \${itemsPerPage === 20 ? 'selected' : ''}>20 / halaman</option>
-          <option value="50" \${itemsPerPage === 50 ? 'selected' : ''}>50 / halaman</option>
-          <option value="100" \${itemsPerPage === 100 ? 'selected' : ''}>100 / halaman</option>
+          <option value="10" ${itemsPerPage === 10 ? 'selected' : ''}>10 / halaman</option>
+          <option value="20" ${itemsPerPage === 20 ? 'selected' : ''}>20 / halaman</option>
+          <option value="50" ${itemsPerPage === 50 ? 'selected' : ''}>50 / halaman</option>
+          <option value="100" ${itemsPerPage === 100 ? 'selected' : ''}>100 / halaman</option>
         </select>
         <div style="display: flex; gap: 4px;">
-          <button class="action-btn" id="btnPrevPage" \${currentPage === 1 ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''}><span class="material-icons-outlined" style="font-size: 18px;">chevron_left</span></button>
-          <div style="padding: 6px 12px; font-size: 14px; font-weight: 500;">Halaman \${currentPage} dari \${totalPages}</div>
-          <button class="action-btn" id="btnNextPage" \${currentPage === totalPages ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''}><span class="material-icons-outlined" style="font-size: 18px;">chevron_right</span></button>
+          <button class="action-btn" id="btnPrevPage" ${currentPage === 1 ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''}><span class="material-icons-outlined" style="font-size: 18px;">chevron_left</span></button>
+          <div style="padding: 6px 12px; font-size: 14px; font-weight: 500;">Halaman ${currentPage} dari ${totalPages}</div>
+          <button class="action-btn" id="btnNextPage" ${currentPage === totalPages ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''}><span class="material-icons-outlined" style="font-size: 18px;">chevron_right</span></button>
         </div>
       </div>
-    \`;
+    `;
 
     paginationContainer.innerHTML = paginationHtml;
 
