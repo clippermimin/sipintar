@@ -15,22 +15,29 @@
       ? (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase() 
       : namaGuru.substring(0, 2).toUpperCase();
       
-    const hariTanggal = window.APP_DATA.getHariTanggal ? await window.APP_DATA.getHariTanggal() : 'Senin, 1 Januari 2026';
-    kelasList = await window.APP_DATA.getAllKelas();
-    
-    const { data: guruData } = await window.supabase.from('profiles').select('*').eq('role', 'guru').order('nama');
-    allGuru = guruData || [];
-
     const urlParams = new URLSearchParams(window.location.search);
     editId = urlParams.get('id');
+    
+    // Fetch data secara paralel agar loading lebih cepat
+    const [hariTanggal, kList, guruRes, editLaporanRes] = await Promise.all([
+      window.APP_DATA.getHariTanggal ? window.APP_DATA.getHariTanggal() : Promise.resolve('Senin, 1 Januari 2026'),
+      window.APP_DATA.getAllKelas(),
+      window.supabase.from('profiles').select('*').eq('role', 'guru').order('nama'),
+      editId ? window.APP_DATA.getLaporanPiketById(editId) : Promise.resolve(null)
+    ]);
+    
+    kelasList = kList || [];
+    const guruData = guruRes.data || [];
+    allGuru = guruData;
+    editLaporan = editLaporanRes;
+
     let prefillCatatan = '';
     let prefillP2 = '';
     let prefillP1 = guru.id;
     let prefillSesi = 'Pagi';
 
-    if (editId) {
+    if (editId && editLaporan) {
       try {
-        editLaporan = await window.APP_DATA.getLaporanPiketById(editId);
         prefillSesi = editLaporan.sesi || 'Pagi';
         prefillP1 = editLaporan.guru_id;
         const petugasMatch = (editLaporan.catatan || '').match(/^\[(.*?)\]\s*/);

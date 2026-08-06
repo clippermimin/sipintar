@@ -11,17 +11,19 @@
       ? (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase() 
       : namaGuru.substring(0, 2).toUpperCase();
 
-    // Fetch riwayat laporan milik guru ini dari Supabase
-    const { data: laporanList } = await window.supabase
-      .from('laporan_piket')
-      .select('id, tanggal, sesi, status')
-      .eq('guru_id', guruId)
-      .order('created_at', { ascending: false })
-      .limit(10);
+    // Fetch riwayat laporan dan daftar absen secara paralel agar loading lebih cepat
+    const [laporanRes, absenSiswa] = await Promise.all([
+      window.supabase
+        .from('laporan_piket')
+        .select('id, tanggal, sesi, status')
+        .eq('guru_id', guruId)
+        .order('created_at', { ascending: false })
+        .limit(10),
+      window.APP_DATA.getSiswaAbsenHariIni()
+    ]);
 
-    // Ambil semua daftar siswa absen hari ini secara global (seluruh sekolah)
-    const absenSiswa = await window.APP_DATA.getSiswaAbsenHariIni();
-    const siswaAbsenHariIni = absenSiswa.length;
+    const laporanList = laporanRes.data;
+    const siswaAbsenHariIni = absenSiswa ? absenSiswa.length : 0;
 
     window.Components.hideLoading();
 
