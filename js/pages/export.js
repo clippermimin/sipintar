@@ -137,9 +137,10 @@
         <div class="ios-card">
           <div class="ios-card-title">Rentang Waktu Laporan</div>
           <div class="ios-chip-group time-chips">
-            <div class="ios-chip active" id="chipBulanIni">Bulan Ini</div>
-            <div class="ios-chip" id="chipBulanLalu">Bulan Lalu</div>
-            <div class="ios-chip" id="chipKustom">Kustom</div>
+            <div class="ios-chip active" id="chipHariIni">Hari Ini</div>
+            <div class="ios-chip" id="chipMingguIni">Minggu Ini</div>
+            <div class="ios-chip" id="chipBulanIni">Bulan Ini</div>
+            <div class="ios-chip" id="chipKustom">Kustom Date</div>
           </div>
           
           <div id="kustomDateInputs" class="ios-input-group" style="display: none;">
@@ -225,18 +226,36 @@
         let endDate = null;
         
         const activeTime = document.querySelector('.time-chips .active').id;
+        const now = new Date();
+        
+        const getLocalYYYYMMDD = (d) => {
+          const year = d.getFullYear();
+          const month = String(d.getMonth() + 1).padStart(2, '0');
+          const day = String(d.getDate()).padStart(2, '0');
+          return `${year}-${month}-${day}`;
+        };
+
         if (activeTime === 'chipKustom') {
           startDate = document.getElementById('startDate').value;
           endDate = document.getElementById('endDate').value;
           if (!startDate || !endDate) throw new Error('Harap pilih rentang tanggal.');
+        } else if (activeTime === 'chipHariIni') {
+          startDate = getLocalYYYYMMDD(now);
+          endDate = getLocalYYYYMMDD(now);
+        } else if (activeTime === 'chipMingguIni') {
+          const day = now.getDay() || 7; 
+          const firstDay = new Date(now);
+          firstDay.setDate(now.getDate() - day + 1);
+          const lastDay = new Date(now);
+          lastDay.setDate(now.getDate() - day + 7);
+          
+          startDate = getLocalYYYYMMDD(firstDay);
+          endDate = getLocalYYYYMMDD(lastDay);
         } else if (activeTime === 'chipBulanIni') {
-          const now = new Date();
-          startDate = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-          endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
-        } else if (activeTime === 'chipBulanLalu') {
-          const now = new Date();
-          startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString().split('T')[0];
-          endDate = new Date(now.getFullYear(), now.getMonth(), 0).toISOString().split('T')[0];
+          const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+          const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+          startDate = getLocalYYYYMMDD(firstDay);
+          endDate = getLocalYYYYMMDD(lastDay);
         }
 
         const data = await window.APP_DATA.getExportData(startDate, endDate);
