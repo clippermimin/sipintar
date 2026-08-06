@@ -363,21 +363,7 @@
           grouped[kId].push(a);
         });
         Object.keys(grouped).forEach(kId => {
-          const blockId = addKelasBlock(kId);
-          setTimeout(() => {
-             const list = document.getElementById(`siswa-list-${blockId}`);
-             if (list) {
-                grouped[kId].forEach(a => {
-                   const cb = list.querySelector(`.absen-checkbox[data-id="${a.siswa_id}"]`);
-                   if (cb) {
-                      cb.checked = true;
-                      const idx = cb.getAttribute('data-idx');
-                      const sel = document.getElementById(`status-${blockId}-${idx}`);
-                      if (sel) sel.value = a.status;
-                   }
-                });
-             }
-          }, 800);
+          addKelasBlock(kId, grouped[kId]);
         });
       } else {
         addKelasBlock();
@@ -385,7 +371,7 @@
     }, 200);
   }
   
-  function addKelasBlock(prefillKelasId = null) {
+  function addKelasBlock(prefillKelasId = null, prefillAbsensi = null) {
     blockCounter++;
     const blockId = `kelas-block-${blockCounter}`;
     
@@ -453,18 +439,29 @@
           <select id="status-${blockId}-${idx}" class="ios-input" style="width: 100px; padding: 6px 8px; font-size: 13px; background: #F2F2F7;">
             <option value="Sakit">Sakit</option>
             <option value="Izin">Izin</option>
-            <option value="Alpa" selected>Alpa</option>
-            <option value="Dispensasi">Dispensasi</option>
+            <option value="Alpha" selected>Alpha</option>
           </select>
         </div>
       `).join('');
+
+      if (prefillAbsensi && Array.isArray(prefillAbsensi)) {
+          prefillAbsensi.forEach(a => {
+             const cb = list.querySelector(`.absen-checkbox[data-id="${a.siswa_id}"]`);
+             if (cb) {
+                cb.checked = true;
+                const idx = cb.getAttribute('data-idx');
+                const sel = document.getElementById(`status-${blockId}-${idx}`);
+                if (sel) sel.value = a.status;
+             }
+          });
+      }
     });
     
     return blockId;
   }
   
   function bindEvents() {
-    document.getElementById('btn-add-kelas').addEventListener('click', addKelasBlock);
+    document.getElementById('btn-add-kelas').addEventListener('click', () => addKelasBlock());
     
     document.getElementById('piket-form').addEventListener('submit', async (e) => {
       e.preventDefault();
