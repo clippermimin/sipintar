@@ -58,11 +58,8 @@
 
   async function render() {
     if (window.APP_STATE.role !== 'admin') { window.Router.navigate('/login'); return; }
-    window.Components.showLoading('Memuat pengaturan...');
 
     const pengaturan = await window.APP_DATA.getPengaturanSekolah();
-
-    window.Components.hideLoading();
 
     const content = `
       <div style="margin-bottom: 24px;">

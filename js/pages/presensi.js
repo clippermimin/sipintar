@@ -55,7 +55,7 @@
           </div>
         </div>
         <p style="text-align: center; color: #8E8E93; font-size: 14px; margin: 16px 0;">Posisikan wajah Anda di dalam lingkaran</p>
-        <button id="btnAmbilFoto" class="ios-btn-primary" disabled style="opacity: 0.5;">
+        <button id="btnAmbilFoto" class="ios-btn-primary">
           <span class="material-icons-outlined">photo_camera</span> Ambil Foto
         </button>
       </div>`;
@@ -263,7 +263,7 @@
       window.Components.toast('Izin kamera ditolak. Aktifkan kamera di pengaturan browser.', 'error');
     }
 
-    // Get GPS in parallel
+    // Get GPS in parallel but don't block the UI
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         gpsCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
@@ -277,16 +277,12 @@
             ? `<span style="background: rgba(52,199,89,0.9); padding: 4px 12px; border-radius: 20px;">✅ Dalam area sekolah (${Math.round(jarak)}m)</span>`
             : `<span style="background: rgba(255,59,48,0.85); padding: 4px 12px; border-radius: 20px;">❌ Di luar area (${Math.round(jarak)}m)</span>`;
         }
-        const btn = document.getElementById('btnAmbilFoto');
-        if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
       },
       (err) => {
         const el = document.getElementById('gpsStatus');
         if (el) el.innerHTML = `<span style="background: rgba(255,149,0,0.9); padding: 4px 12px; border-radius: 20px;">⚠️ GPS tidak tersedia</span>`;
-        const btn = document.getElementById('btnAmbilFoto');
-        if (btn) { btn.disabled = false; btn.style.opacity = '1'; } // Tetap boleh foto, GPS gagal
       },
-      { enableHighAccuracy: true, timeout: 10000 }
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
     );
   }
 
@@ -314,9 +310,20 @@
 
     if (currentTab === 'Hadir') {
       document.getElementById('btnAmbilFoto')?.addEventListener('click', async () => {
+        const btnAmbil = document.getElementById('btnAmbilFoto');
+        const originalText = btnAmbil.innerHTML;
+        btnAmbil.innerHTML = '<span class="material-icons-outlined" style="animation: spin 1s linear infinite;">refresh</span> Memproses...';
+        btnAmbil.disabled = true;
+
         const previewUrl = await capturePhoto();
 
-        // Hitung GPS & tampilkan konfirmasi
+        // Hitung GPS & tampilkan konfirmasi (tunggu jika GPS belum siap)
+        let attempt = 0;
+        while (!gpsCoords && attempt < 20) { // wait up to 4 seconds for GPS
+          await new Promise(r => setTimeout(r, 200));
+          attempt++;
+        }
+
         const p = pengaturan || await window.APP_DATA.getPengaturanSekolah();
         pengaturan = p;
         let jarak = 9999;
