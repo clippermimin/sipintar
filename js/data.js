@@ -275,14 +275,24 @@ window.APP_DATA = {
   },
 
   async updatePengaturanSekolah(id, updateData) {
-    const { data, error } = await window.supabase
-      .from('pengaturan_sekolah')
-      .update({ ...updateData, updated_at: new Date().toISOString() })
-      .eq('id', id)
-      .select()
-      .single();
-    if (error) throw error;
-    return data;
+    if (!id) {
+      const { data, error } = await window.supabase
+        .from('pengaturan_sekolah')
+        .insert({ ...updateData })
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    } else {
+      const { data, error } = await window.supabase
+        .from('pengaturan_sekolah')
+        .update({ ...updateData, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    }
   },
 
   async getRekapPresensi(startDate, endDate) {

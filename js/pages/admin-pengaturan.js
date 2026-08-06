@@ -160,12 +160,13 @@
       btn.disabled = true;
       try {
         const id = document.getElementById('pg-id').value;
-        await window.APP_DATA.updatePengaturanSekolah(id, {
+        const savedData = await window.APP_DATA.updatePengaturanSekolah(id, {
           nama_sekolah: document.getElementById('pg-nama').value,
           lat_sekolah: parseFloat(document.getElementById('pg-lat').value),
           lng_sekolah: parseFloat(document.getElementById('pg-lng').value),
           radius_meter: parseInt(document.getElementById('pg-radius').value)
         });
+        document.getElementById('pg-id').value = savedData.id;
         window.Components.toast('Pengaturan berhasil disimpan!', 'success');
       } catch (err) {
         window.Components.toast('Gagal menyimpan: ' + (err.message || err), 'error');
