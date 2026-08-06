@@ -365,9 +365,7 @@ window.APP_DATA = {
   },
 
   async deleteLaporanPiket(id) {
-    // Supabase cascade delete will handle absensi_piket if foreign key is configured properly. 
-    // Just to be safe, we delete absensi first.
-    await window.supabase.from('absensi_piket').delete().eq('laporan_id', id);
+    // Supabase cascade delete will automatically handle absensi_piket
     const { error } = await window.supabase.from('laporan_piket').delete().eq('id', id);
     if (error) throw error;
     return true;
