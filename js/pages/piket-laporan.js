@@ -38,7 +38,7 @@
           const namesStr = petugasMatch[1]; 
           const p2Match = namesStr.match(/Petugas 2: (.*?)$/);
           if (p2Match) {
-             const guru2 = allGuru.find(g => g.nama === p2Match[1]);
+             const guru2 = allGuru.find(g => g.nama.trim().toLowerCase() === p2Match[1].trim().toLowerCase());
              if (guru2) prefillP2 = guru2.id;
           }
           prefillCatatan = editLaporan.catatan.substring(petugasMatch[0].length);
@@ -270,15 +270,15 @@
               <div style="margin-bottom: 12px;">
                 <div style="font-size: 13px; font-weight: 600; color: #8E8E93; margin-bottom: 4px;">Petugas 1</div>
                 <select id="petugas-1" class="ios-input" required>
-                  <option value="" disabled selected>-- Pilih Petugas 1 --</option>
-                  ${allGuru.map(g => `<option value="${g.id}">${g.nama}</option>`).join('')}
+                  <option value="" disabled ${!prefillP1 ? 'selected' : ''}>-- Pilih Petugas 1 --</option>
+                  ${allGuru.map(g => `<option value="${g.id}" ${prefillP1 === g.id ? 'selected' : ''}>${g.nama}</option>`).join('')}
                 </select>
               </div>
               <div>
                 <div style="font-size: 13px; font-weight: 600; color: #8E8E93; margin-bottom: 4px;">Petugas 2</div>
                 <select id="petugas-2" class="ios-input" required>
-                  <option value="" disabled selected>-- Pilih Petugas 2 --</option>
-                  ${allGuru.map(g => `<option value="${g.id}">${g.nama}</option>`).join('')}
+                  <option value="" disabled ${!prefillP2 ? 'selected' : ''}>-- Pilih Petugas 2 --</option>
+                  ${allGuru.map(g => `<option value="${g.id}" ${prefillP2 === g.id ? 'selected' : ''}>${g.nama}</option>`).join('')}
                 </select>
               </div>
             </div>
@@ -326,7 +326,7 @@
           <div class="ios-form-group">
             <label class="ios-form-label">Catatan Tambahan</label>
             <div class="ios-form-card">
-              <textarea id="catatan" class="ios-input" rows="4" style="background: transparent; padding: 0;" placeholder="Contoh: Alhamdulillah sesi berjalan dengan baik lancar"></textarea>
+              <textarea id="catatan" class="ios-input" rows="4" style="background: transparent; padding: 0;" placeholder="Contoh: Alhamdulillah sesi berjalan dengan baik lancar">${prefillCatatan}</textarea>
             </div>
           </div>
           
@@ -341,16 +341,7 @@
     `;
     
     window.Components.renderPage(html);
-    
-    
-    setTimeout(() => {
-      if (editId && editLaporan) {
-        document.getElementById('petugas-1').value = prefillP1 || '';
-        if (prefillP2) document.getElementById('petugas-2').value = prefillP2;
-      } else if (guru.id) {
-        document.getElementById('petugas-1').value = guru.id;
-      }
-    }, 100);
+
     
     setTimeout(() => {
       bindEvents();
@@ -397,13 +388,7 @@
     `;
     
     document.getElementById('kelas-blocks-container').insertAdjacentHTML('beforeend', blockHtml);
-    if (prefillKelasId) {
-       const sel = document.querySelector(`#${blockId} .select-kelas-dinamis`);
-       if (sel) {
-          sel.value = prefillKelasId;
-          sel.dispatchEvent(new Event('change'));
-       }
-    }
+
     
     if (blockCounter > 1) {
       document.querySelector(`#${blockId} .btn-remove-block`).addEventListener('click', function() {
@@ -456,6 +441,15 @@
           });
       }
     });
+
+    if (prefillKelasId) {
+       const sel = document.querySelector(`#${blockId} .select-kelas-dinamis`);
+       if (sel) {
+          sel.value = prefillKelasId;
+          sel.dispatchEvent(new Event('change'));
+       }
+    }
+
     
     return blockId;
   }
