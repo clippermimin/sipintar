@@ -140,7 +140,7 @@
             <div class="ios-chip active" id="chipHariIni">Hari Ini</div>
             <div class="ios-chip" id="chipMingguIni">Minggu Ini</div>
             <div class="ios-chip" id="chipBulanIni">Bulan Ini</div>
-            <div class="ios-chip" id="chipKustom">Kustom Date</div>
+            <div class="ios-chip" id="chipKustom">Custom Date</div>
           </div>
           
           <div id="kustomDateInputs" class="ios-input-group" style="display: none;">
