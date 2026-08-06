@@ -82,6 +82,8 @@
   let globalKelas = [];
   let globalSiswa = [];
   let currentSort = { column: 'nama', direction: 'asc' };
+  let currentPage = 1;
+  let itemsPerPage = 10;
   
   async function fetchAndRenderList() {
     const container = document.getElementById('siswaTableBody');
@@ -137,13 +139,21 @@
 
     if (filtered.length === 0) {
       container.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 32px; color:#999;">Tidak ada data siswa ditemukan.</td></tr>';
+      renderPaginationControls(0);
       return;
     }
 
-    container.innerHTML = filtered.map((s, i) => `
+    const totalPages = Math.ceil(filtered.length / itemsPerPage);
+    if (currentPage > totalPages) currentPage = totalPages;
+    if (currentPage < 1) currentPage = 1;
+
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const paginatedItems = filtered.slice(startIndex, startIndex + itemsPerPage);
+
+    container.innerHTML = paginatedItems.map((s, i) => `
       <tr>
         <td style="width: 40px;"><input type="checkbox" class="mutqin-checkbox row-checkbox" value="${s.id}"></td>
-        <td style="width: 50px; color: #888;">${i + 1}</td>
+        <td style="width: 50px; color: #888;">${startIndex + i + 1}</td>
         <td><div style="font-weight: 600; color: #202124;">${s.nama}</div></td>
         <td><div class="kelas-badge">${s.kelas?.nama || '-'}</div></td>
         <td style="width: 120px;">
@@ -155,8 +165,86 @@
       </tr>
     `).join('');
 
+    // Pastikan "Check All" tidak terpilih di awal render ulang
+    const checkAll = document.getElementById('checkAll');
+    if (checkAll) checkAll.checked = false;
+
     bindTableEvents();
     updateFloatingBar();
+    renderPaginationControls(filtered.length);
+  }
+
+  function renderPaginationControls(totalItems) {
+    let paginationContainer = document.getElementById('paginationContainer');
+    if (!paginationContainer) {
+      const tableWrapper = document.querySelector('.mutqin-table').parentElement;
+      paginationContainer = document.createElement('div');
+      paginationContainer.id = 'paginationContainer';
+      paginationContainer.style.display = 'flex';
+      paginationContainer.style.justifyContent = 'space-between';
+      paginationContainer.style.alignItems = 'center';
+      paginationContainer.style.padding = '16px';
+      paginationContainer.style.background = 'white';
+      paginationContainer.style.borderTop = '1px solid #f3f4f6';
+      paginationContainer.style.flexWrap = 'wrap';
+      paginationContainer.style.gap = '16px';
+      tableWrapper.appendChild(paginationContainer);
+    }
+
+    if (totalItems === 0) {
+      paginationContainer.innerHTML = '';
+      return;
+    }
+
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+    
+    let paginationHtml = \`
+      <div style="font-size: 14px; color: #6b7280;">
+        Menampilkan \${Math.min((currentPage - 1) * itemsPerPage + 1, totalItems)} - \${Math.min(currentPage * itemsPerPage, totalItems)} dari \${totalItems} siswa
+      </div>
+      <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+        <select id="itemsPerPageSelect" style="padding: 6px 12px; border: 1px solid #e5e7eb; border-radius: 6px; font-size: 14px; background: white; cursor: pointer; outline: none;">
+          <option value="10" \${itemsPerPage === 10 ? 'selected' : ''}>10 / halaman</option>
+          <option value="20" \${itemsPerPage === 20 ? 'selected' : ''}>20 / halaman</option>
+          <option value="50" \${itemsPerPage === 50 ? 'selected' : ''}>50 / halaman</option>
+          <option value="100" \${itemsPerPage === 100 ? 'selected' : ''}>100 / halaman</option>
+        </select>
+        <div style="display: flex; gap: 4px;">
+          <button class="action-btn" id="btnPrevPage" \${currentPage === 1 ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''}><span class="material-icons-outlined" style="font-size: 18px;">chevron_left</span></button>
+          <div style="padding: 6px 12px; font-size: 14px; font-weight: 500;">Halaman \${currentPage} dari \${totalPages}</div>
+          <button class="action-btn" id="btnNextPage" \${currentPage === totalPages ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''}><span class="material-icons-outlined" style="font-size: 18px;">chevron_right</span></button>
+        </div>
+      </div>
+    \`;
+
+    paginationContainer.innerHTML = paginationHtml;
+
+    document.getElementById('itemsPerPageSelect').addEventListener('change', (e) => {
+      itemsPerPage = parseInt(e.target.value);
+      currentPage = 1;
+      renderTable();
+    });
+
+    const btnPrevPage = document.getElementById('btnPrevPage');
+    const btnNextPage = document.getElementById('btnNextPage');
+    
+    if (btnPrevPage) {
+      btnPrevPage.addEventListener('click', () => {
+        if (currentPage > 1) {
+          currentPage--;
+          renderTable();
+        }
+      });
+    }
+
+    if (btnNextPage) {
+      btnNextPage.addEventListener('click', () => {
+        if (currentPage < totalPages) {
+          currentPage++;
+          renderTable();
+        }
+      });
+    }
   }
 
   function bindTableEvents() {
@@ -329,8 +417,8 @@
     document.getElementById('btnImport').addEventListener('click', () => { document.getElementById('formImport').reset(); document.getElementById('importPreview').innerText = ''; modalImport.classList.remove('hidden'); });
     document.querySelectorAll('.btn-batal-import').forEach(btn => btn.addEventListener('click', () => modalImport.classList.add('hidden')));
 
-    document.getElementById('searchSiswa').addEventListener('input', renderTable);
-    document.getElementById('filterKelas').addEventListener('change', renderTable);
+    document.getElementById('searchSiswa').addEventListener('input', () => { currentPage = 1; renderTable(); });
+    document.getElementById('filterKelas').addEventListener('change', () => { currentPage = 1; renderTable(); });
     
     document.getElementById('thNama').addEventListener('click', () => handleSort('nama'));
     document.getElementById('thKelas').addEventListener('click', () => handleSort('kelas'));
