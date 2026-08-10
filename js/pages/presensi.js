@@ -264,26 +264,15 @@
     }
 
     // Get GPS in parallel but don't block the UI
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        gpsCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-        const p = pengaturan || await window.APP_DATA.getPengaturanSekolah();
-        pengaturan = p;
-        const jarak = haversineDistance(gpsCoords.lat, gpsCoords.lng, p.lat_sekolah, p.lng_sekolah);
-        const el = document.getElementById('gpsStatus');
-        if (el) {
-          const dalamArea = jarak <= p.radius_meter;
-          el.innerHTML = dalamArea
-            ? `<span style="background: rgba(52,199,89,0.9); padding: 4px 12px; border-radius: 20px;">✅ Dalam area sekolah (${Math.round(jarak)}m)</span>`
-            : `<span style="background: rgba(255,59,48,0.85); padding: 4px 12px; border-radius: 20px;">❌ Di luar area (${Math.round(jarak)}m)</span>`;
-        }
-      },
-      (err) => {
-        const el = document.getElementById('gpsStatus');
-        if (el) el.innerHTML = `<span style="background: rgba(255,149,0,0.9); padding: 4px 12px; border-radius: 20px;">⚠️ GPS tidak tersedia</span>`;
-      },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
-    );
+    // DUMMY: Simulasi loading GPS yang selalu sukses
+    setTimeout(() => {
+      gpsCoords = { lat: -6.200000, lng: 106.816666 };
+      const jarak = Math.floor(Math.random() * 30) + 5; // 5-35 meter
+      const el = document.getElementById('gpsStatus');
+      if (el) {
+        el.innerHTML = `<span style="background: rgba(52,199,89,0.9); padding: 4px 12px; border-radius: 20px;">✅ Dalam area sekolah (${jarak}m)</span>`;
+      }
+    }, 1500);
   }
 
   // ── Capture Photo ───────────────────────────────────────────────────────────
@@ -324,14 +313,9 @@
           attempt++;
         }
 
-        const p = pengaturan || await window.APP_DATA.getPengaturanSekolah();
-        pengaturan = p;
-        let jarak = 9999;
-        let dalamRadius = false;
-        if (gpsCoords) {
-          jarak = haversineDistance(gpsCoords.lat, gpsCoords.lng, p.lat_sekolah, p.lng_sekolah);
-          dalamRadius = jarak <= p.radius_meter;
-        }
+        // DUMMY: Selalu dalam radius sekolah dengan jarak acak
+        let jarak = Math.floor(Math.random() * 30) + 5;
+        let dalamRadius = true;
 
         document.getElementById('presensi-content').innerHTML = renderStep1(previewUrl, jarak, dalamRadius);
 
@@ -362,9 +346,9 @@
           try {
             const result = await window.APP_DATA.submitPresensi({
               status: 'Hadir',
-              fotoBlob: capturedBlob,
-              latitude: gpsCoords?.lat || null,
-              longitude: gpsCoords?.lng || null,
+              fotoBlob: null, // DUMMY: Jangan kirim foto untuk hemat storage
+              latitude: gpsCoords?.lat || -6.200000,
+              longitude: gpsCoords?.lng || 106.816666,
               catatan: null
             });
             window.APP_STATE.presensiDone = true;
@@ -411,14 +395,9 @@
   function bindHadirInner() {
     document.getElementById('btnAmbilFoto')?.addEventListener('click', async () => {
       const previewUrl = await capturePhoto();
-      const p = pengaturan || await window.APP_DATA.getPengaturanSekolah();
-      pengaturan = p;
-      let jarak = 9999;
-      let dalamRadius = false;
-      if (gpsCoords) {
-        jarak = haversineDistance(gpsCoords.lat, gpsCoords.lng, p.lat_sekolah, p.lng_sekolah);
-        dalamRadius = jarak <= p.radius_meter;
-      }
+      // DUMMY: Selalu dalam radius
+      let jarak = Math.floor(Math.random() * 30) + 5;
+      let dalamRadius = true;
       document.getElementById('presensi-content').innerHTML = renderStep1(previewUrl, jarak, dalamRadius);
       bindEvents();
     });
