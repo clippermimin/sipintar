@@ -90,11 +90,11 @@ window.Components = {
   },
   
   hideLoading() {
-    const overlay = document.getElementById('loading-overlay');
-    if (overlay) {
+    const overlays = document.querySelectorAll('.loading-overlay');
+    overlays.forEach(overlay => {
       overlay.style.opacity = '0';
       setTimeout(() => overlay.remove(), 300);
-    }
+    });
   },
   
   // Footer
