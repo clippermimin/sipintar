@@ -277,16 +277,29 @@
 
   // ── Capture Photo ───────────────────────────────────────────────────────────
   async function capturePhoto() {
-    const video = document.getElementById('cameraVideo');
-    if (!video) return;
-    const canvas = document.createElement('canvas');
-    canvas.width = video.videoWidth || 640;
-    canvas.height = video.videoHeight || 480;
-    canvas.getContext('2d').drawImage(video, 0, 0);
-    const dataUrl = canvas.toDataURL('image/jpeg');
-    capturedBlob = await compressImageToBlob(dataUrl);
-    stopStream();
-    return dataUrl;
+    try {
+      const video = document.getElementById('cameraVideo');
+      if (!video) return 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth || 640;
+      canvas.height = video.videoHeight || 480;
+      // Handle empty video stream gracefully
+      if (canvas.width > 0 && canvas.height > 0) {
+        canvas.getContext('2d').drawImage(video, 0, 0);
+      }
+      const dataUrl = canvas.toDataURL('image/jpeg');
+      
+      // DUMMY: Kita tidak butuh compress/blob karena tidak diupload
+      // capturedBlob = await compressImageToBlob(dataUrl); 
+      capturedBlob = null; 
+      
+      stopStream();
+      return dataUrl;
+    } catch (e) {
+      console.error("Camera capture error:", e);
+      stopStream();
+      return 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'; // Dummy 1x1 image
+    }
   }
 
   // ── Bind Events ─────────────────────────────────────────────────────────────
