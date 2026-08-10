@@ -226,7 +226,7 @@
       window.Components.renderPage(html);
       setTimeout(() => {
         document.getElementById('btnKembaliDashboard')?.addEventListener('click', () => window.Router.navigate('/guru/dashboard'));
-      }, 100);
+      }, 200);
       return;
     }
 
@@ -250,7 +250,7 @@
     setTimeout(() => {
       bindEvents();
       if (currentTab === 'Hadir') initCamera();
-    }, 100);
+    }, 200);
   }
 
   // ── Init Camera & GPS ───────────────────────────────────────────────────────
