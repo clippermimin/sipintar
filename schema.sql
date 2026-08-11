@@ -152,6 +152,7 @@ ALTER TABLE pengaturan_sekolah ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Allow select presensi" ON presensi FOR SELECT TO authenticated USING (true);
 CREATE POLICY "Allow insert presensi" ON presensi FOR INSERT TO authenticated WITH CHECK (true);
 CREATE POLICY "Allow update presensi" ON presensi FOR UPDATE TO authenticated USING (true);
+CREATE POLICY "Allow delete presensi" ON presensi FOR DELETE TO authenticated USING (true);
 
 CREATE POLICY "Allow select pengaturan" ON pengaturan_sekolah FOR SELECT TO authenticated USING (true);
 CREATE POLICY "Allow update pengaturan" ON pengaturan_sekolah FOR UPDATE TO authenticated USING (true);
