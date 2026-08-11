@@ -386,6 +386,25 @@ window.APP_DATA = {
       };
     });
   },
+
+  async getGuruAbsenHariIni() {
+    const today = (await window.APP_DATA.getHariTanggal()).tanggal || new Date().toISOString().split('T')[0];
+    const { data, error } = await window.supabase
+      .from('presensi')
+      .select('status, profiles(nama)')
+      .eq('tanggal', today)
+      .neq('status', 'Hadir');
+      
+    if (error) {
+      console.error(error);
+      return [];
+    }
+    
+    return data.map(d => ({
+      nama: d.profiles?.nama || 'Unknown',
+      status: d.status
+    }));
+  },
   
   async getLaporanPiketById(id) {
     const { data, error } = await window.supabase

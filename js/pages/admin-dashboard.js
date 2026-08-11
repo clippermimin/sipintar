@@ -79,6 +79,7 @@
     const stats = await window.APP_DATA.getAdminStats();
     const aktivitas = await window.APP_DATA.getAdminAktivitas();
     const absenSiswa = await window.APP_DATA.getSiswaAbsenHariIni();
+    const absenGuru = await window.APP_DATA.getGuruAbsenHariIni();
 
     const statGrid = `
       <div class="stat-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 24px;">
@@ -148,7 +149,7 @@
 
       ${statGrid}
 
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; margin-bottom: 24px;">
         <div class="card" style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
             <h3 style="margin: 0; font-size: 16px; color: #333;">Siswa Absen Hari Ini</h3>
@@ -164,6 +165,21 @@
                 <span style="font-size: 12px; font-weight: 600; color: #d97706; background: #fef3c7; padding: 4px 8px; border-radius: 4px;">${a.status}</span>
               </div>
             `).join('') : '<div style="text-align: center; color: #999; font-size: 14px; padding: 16px;">Tidak ada siswa absen hari ini 🎉</div>'}
+          </div>
+        </div>
+
+        <div class="card" style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h3 style="margin: 0; font-size: 16px; color: #333;">Guru Absen Hari Ini</h3>
+            <span style="background: #fee2e2; color: #ef4444; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;">${absenGuru.length} Guru</span>
+          </div>
+          <div style="max-height: 300px; overflow-y: auto;">
+            ${absenGuru.length > 0 ? absenGuru.map(a => `
+              <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f0f0f0;">
+                <div style="font-weight: 500; color: #333; font-size: 14px;">${a.nama}</div>
+                <span style="font-size: 12px; font-weight: 600; color: #d97706; background: #fef3c7; padding: 4px 8px; border-radius: 4px;">${a.status}</span>
+              </div>
+            `).join('') : '<div style="text-align: center; color: #999; font-size: 14px; padding: 16px;">Seluruh guru hadir hari ini 🎉</div>'}
           </div>
         </div>
 
