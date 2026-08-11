@@ -534,15 +534,17 @@ window.APP_DATA = {
     const { count: totalGuru } = await window.supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'guru');
     const { count: totalSiswa } = await window.supabase.from('siswa').select('*', { count: 'exact', head: true });
     
-    const today = new Date().toISOString().split('T')[0];
+    const d = new Date();
+    const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    
     const { count: laporanHariIni } = await window.supabase.from('laporan_piket').select('*', { count: 'exact', head: true }).eq('tanggal', today);
     
     const { count: tidakHadir } = await window.supabase.from('absensi_piket').select('id, laporan_piket!inner(tanggal)', { count: 'exact', head: true }).eq('laporan_piket.tanggal', today);
     
-    let kehadiran = '100%';
+    let kehadiran = 100;
     if (totalSiswa > 0 && tidakHadir !== null) {
        const persentase = ((totalSiswa - tidakHadir) / totalSiswa) * 100;
-       kehadiran = (persentase < 0 ? 0 : persentase).toFixed(1).replace('.0', '') + '%';
+       kehadiran = persentase < 0 ? 0 : parseFloat(persentase.toFixed(1));
     }
 
     return { 

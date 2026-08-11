@@ -82,41 +82,54 @@
     const absenGuru = await window.APP_DATA.getGuruAbsenHariIni();
 
     const statGrid = `
-      <div class="stat-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 24px;">
-        <div class="stat-card" style="background: white; padding: 16px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 16px;">
-          <div style="width: 48px; height: 48px; border-radius: 12px; background: #e3f2fd; color: #1976d2; display: flex; align-items: center; justify-content: center;">
-            <span class="material-icons-outlined">people</span>
-          </div>
+      <div class="stat-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; margin-bottom: 32px;">
+        
+        <div class="metric-card" style="background: white; padding: 24px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.03); border: 1px solid #f3f4f6; display: flex; align-items: center; justify-content: space-between; position: relative; overflow: hidden; transition: transform 0.2s;">
+          <div style="position: absolute; top: 0; right: 0; width: 80px; height: 80px; background: linear-gradient(135deg, #e3f2fd, transparent); border-radius: 0 20px 0 100%; opacity: 0.6;"></div>
           <div>
-            <div class="stat-card-value" style="font-size: 24px; font-weight: bold; color: #333;">${stats.totalGuru}</div>
-            <div class="stat-card-label" style="font-size: 14px; color: #666;">Total Guru</div>
+            <div style="font-size: 14px; color: #6b7280; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Total Guru</div>
+            <div class="metric-number animate-number" data-target="${stats.totalGuru}" style="font-size: 36px; font-weight: 800; color: #111827; line-height: 1;">0</div>
+          </div>
+          <div style="width: 56px; height: 56px; border-radius: 16px; background: #e3f2fd; color: #1a73e8; display: flex; align-items: center; justify-content: center; z-index: 1;">
+            <span class="material-icons-outlined" style="font-size: 28px;">people</span>
           </div>
         </div>
-        <div class="stat-card" style="background: white; padding: 16px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 16px;">
-          <div style="width: 48px; height: 48px; border-radius: 12px; background: #e8f5e9; color: #388e3c; display: flex; align-items: center; justify-content: center;">
-            <span class="material-icons-outlined">school</span>
-          </div>
+        
+        <div class="metric-card" style="background: white; padding: 24px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.03); border: 1px solid #f3f4f6; display: flex; align-items: center; justify-content: space-between; position: relative; overflow: hidden; transition: transform 0.2s;">
+          <div style="position: absolute; top: 0; right: 0; width: 80px; height: 80px; background: linear-gradient(135deg, #e8f5e9, transparent); border-radius: 0 20px 0 100%; opacity: 0.6;"></div>
           <div>
-            <div class="stat-card-value" style="font-size: 24px; font-weight: bold; color: #333;">${stats.totalSiswa}</div>
-            <div class="stat-card-label" style="font-size: 14px; color: #666;">Total Siswa</div>
+            <div style="font-size: 14px; color: #6b7280; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Total Siswa</div>
+            <div class="metric-number animate-number" data-target="${stats.totalSiswa}" style="font-size: 36px; font-weight: 800; color: #111827; line-height: 1;">0</div>
+          </div>
+          <div style="width: 56px; height: 56px; border-radius: 16px; background: #e8f5e9; color: #10b981; display: flex; align-items: center; justify-content: center; z-index: 1;">
+            <span class="material-icons-outlined" style="font-size: 28px;">school</span>
           </div>
         </div>
-        <div class="stat-card" style="background: white; padding: 16px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 16px;">
-          <div style="width: 48px; height: 48px; border-radius: 12px; background: #fff3e0; color: #f57c00; display: flex; align-items: center; justify-content: center;">
-            <span class="material-icons-outlined">description</span>
-          </div>
+
+        <div class="metric-card" style="background: white; padding: 24px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.03); border: 1px solid #f3f4f6; display: flex; align-items: center; justify-content: space-between; position: relative; overflow: hidden; transition: transform 0.2s;">
+          <div style="position: absolute; top: 0; right: 0; width: 80px; height: 80px; background: linear-gradient(135deg, #fff3e0, transparent); border-radius: 0 20px 0 100%; opacity: 0.6;"></div>
           <div>
-            <div class="stat-card-value" style="font-size: 24px; font-weight: bold; color: #333;">${stats.laporanHariIni}</div>
-            <div class="stat-card-label" style="font-size: 14px; color: #666;">Laporan Hari Ini</div>
+            <div style="font-size: 14px; color: #6b7280; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Laporan Piket</div>
+            <div class="metric-number animate-number" data-target="${stats.laporanHariIni}" style="font-size: 36px; font-weight: 800; color: #111827; line-height: 1;">0</div>
+          </div>
+          <div style="width: 56px; height: 56px; border-radius: 16px; background: #fff3e0; color: #f59e0b; display: flex; align-items: center; justify-content: center; z-index: 1;">
+            <span class="material-icons-outlined" style="font-size: 28px;">description</span>
           </div>
         </div>
-        <div class="stat-card" style="background: white; padding: 16px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 16px;">
-          <div style="width: 48px; height: 48px; border-radius: 12px; background: #f3e5f5; color: #7b1fa2; display: flex; align-items: center; justify-content: center;">
-            <span class="material-icons-outlined">trending_up</span>
-          </div>
+
+        <div class="metric-card" style="background: white; padding: 24px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.03); border: 1px solid #f3f4f6; display: flex; align-items: center; justify-content: space-between; position: relative; overflow: hidden; transition: transform 0.2s;">
+          <div style="position: absolute; top: 0; right: 0; width: 80px; height: 80px; background: linear-gradient(135deg, #f3e8ff, transparent); border-radius: 0 20px 0 100%; opacity: 0.6;"></div>
           <div>
-            <div class="stat-card-value" style="font-size: 24px; font-weight: bold; color: #333;">${stats.kehadiran}</div>
-            <div class="stat-card-label" style="font-size: 14px; color: #666;">Kehadiran</div>
+            <div style="font-size: 14px; color: #6b7280; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Tingkat Kehadiran</div>
+            <div style="display: flex; align-items: baseline; gap: 4px;">
+              <div class="metric-number animate-number" data-target="${stats.kehadiran}" style="font-size: 36px; font-weight: 800; color: #111827; line-height: 1;">0</div>
+              <span style="font-size: 18px; font-weight: 700; color: #6b7280;">%</span>
+            </div>
+          </div>
+          
+          <div class="circular-progress" data-progress="${stats.kehadiran}" style="width: 64px; height: 64px; border-radius: 50%; background: conic-gradient(#8b5cf6 0deg, #f3f4f6 0deg); display: flex; align-items: center; justify-content: center; position: relative; z-index: 1;">
+            <div style="position: absolute; inset: 5px; background: white; border-radius: 50%;"></div>
+            <span class="material-icons-outlined" style="position: relative; z-index: 2; font-size: 24px; color: #8b5cf6;">trending_up</span>
           </div>
         </div>
       </div>
@@ -220,6 +233,55 @@
         sidebar.classList.remove('open');
         overlay.classList.add('hidden');
       });
+    }
+
+    // Animation Logic
+    const animateValue = (obj, start, end, duration) => {
+      let startTimestamp = null;
+      const step = (timestamp) => {
+        if (!startTimestamp) startTimestamp = timestamp;
+        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+        const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+        
+        if (end % 1 !== 0) {
+          obj.innerHTML = (progress * (end - start) + start).toFixed(1);
+        } else {
+          obj.innerHTML = Math.floor(progress * (end - start) + start);
+        }
+        
+        if (progress < 1) {
+          window.requestAnimationFrame(step);
+        } else {
+          obj.innerHTML = end;
+        }
+      };
+      window.requestAnimationFrame(step);
+    };
+
+    // Run animations
+    document.querySelectorAll('.animate-number').forEach(el => {
+      const target = parseFloat(el.getAttribute('data-target')) || 0;
+      animateValue(el, 0, target, 1500);
+    });
+
+    const circle = document.querySelector('.circular-progress');
+    if (circle) {
+      const targetVal = parseFloat(circle.getAttribute('data-progress')) || 0;
+      const targetDeg = targetVal * 3.6; // 100% = 360deg
+      let startTimestamp = null;
+      const step = (timestamp) => {
+        if (!startTimestamp) startTimestamp = timestamp;
+        const progress = Math.min((timestamp - startTimestamp) / 1500, 1);
+        const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+        const currentDeg = easeOutQuart * targetDeg;
+        circle.style.background = `conic-gradient(#8b5cf6 ${currentDeg}deg, #f3f4f6 ${currentDeg}deg)`;
+        if (progress < 1) {
+          window.requestAnimationFrame(step);
+        } else {
+          circle.style.background = `conic-gradient(#8b5cf6 ${targetDeg}deg, #f3f4f6 ${targetDeg}deg)`;
+        }
+      };
+      window.requestAnimationFrame(step);
     }
   }
 
