@@ -240,11 +240,12 @@
     }
 
     const timeString = laporan.created_at ? new Date(laporan.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '-';
+    const tglIndo = new Date(laporan.tanggal).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
     detailContent.innerHTML = `
       <div style="display: grid; grid-template-columns: 100px 1fr; gap: 8px; margin-bottom: 16px;">
         <div style="color: #666; font-weight: 500;">Tanggal</div>
-        <div>: ${laporan.tanggal}</div>
+        <div>: ${tglIndo}</div>
         <div style="color: #666; font-weight: 500;">Waktu Dibuat</div>
         <div>: Pukul ${timeString}</div>
         <div style="color: #666; font-weight: 500;">Sesi</div>
@@ -358,11 +359,12 @@
         : `<span class="badge" style="background:#fff3e0;color:#ef6c00;padding:4px 8px;border-radius:4px;font-size:12px;font-weight:500;">Belum Selesai</span>`;
       
       const timeString = l.created_at ? new Date(l.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '';
+      const tglIndo = new Date(l.tanggal).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
       return `
         <div class="card" style="background:white;padding:16px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);margin-bottom:12px;">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
             <div>
-              <div style="font-weight:500;font-size:16px;color:#333;">${l.tanggal} &bull; Sesi ${l.sesi}</div>
+              <div style="font-weight:500;font-size:16px;color:#333;">${tglIndo} &bull; Sesi ${l.sesi}</div>
               <div style="font-size:13px;color:#666;margin-top:4px;">Dibuat pada: ${timeString ? `Pukul ${timeString}` : '-'}</div>
               <div style="font-size:13px;color:#666;margin-top:4px;">Petugas: ${l.profiles?.nama || '-'}</div>
               ${l.catatan ? `<div style="font-size:12px;color:#888;margin-top:4px;font-style:italic;">${l.catatan}</div>` : ''}
