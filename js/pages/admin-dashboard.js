@@ -120,7 +120,7 @@
         <div class="metric-card" style="background: white; padding: 24px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.03); border: 1px solid #f3f4f6; display: flex; align-items: center; justify-content: space-between; position: relative; overflow: hidden; transition: transform 0.2s;">
           <div style="position: absolute; top: 0; right: 0; width: 80px; height: 80px; background: linear-gradient(135deg, #f3e8ff, transparent); border-radius: 0 20px 0 100%; opacity: 0.6;"></div>
           <div>
-            <div style="font-size: 14px; color: #6b7280; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Tingkat Kehadiran</div>
+            <div style="font-size: 14px; color: #6b7280; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Kehadiran Siswa</div>
             <div style="display: flex; align-items: baseline; gap: 4px;">
               <div class="metric-number animate-number" data-target="${stats.kehadiran}" style="font-size: 36px; font-weight: 800; color: #111827; line-height: 1;">0</div>
               <span style="font-size: 18px; font-weight: 700; color: #6b7280;">%</span>
@@ -130,6 +130,22 @@
           <div class="circular-progress" data-progress="${stats.kehadiran}" style="width: 64px; height: 64px; border-radius: 50%; background: conic-gradient(#8b5cf6 0deg, #f3f4f6 0deg); display: flex; align-items: center; justify-content: center; position: relative; z-index: 1;">
             <div style="position: absolute; inset: 5px; background: white; border-radius: 50%;"></div>
             <span class="material-icons-outlined" style="position: relative; z-index: 2; font-size: 24px; color: #8b5cf6;">trending_up</span>
+          </div>
+        </div>
+
+        <div class="metric-card" style="background: white; padding: 24px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.03); border: 1px solid #f3f4f6; display: flex; align-items: center; justify-content: space-between; position: relative; overflow: hidden; transition: transform 0.2s;">
+          <div style="position: absolute; top: 0; right: 0; width: 80px; height: 80px; background: linear-gradient(135deg, #e0f2fe, transparent); border-radius: 0 20px 0 100%; opacity: 0.6;"></div>
+          <div>
+            <div style="font-size: 14px; color: #6b7280; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Kehadiran Guru</div>
+            <div style="display: flex; align-items: baseline; gap: 4px;">
+              <div class="metric-number animate-number" data-target="${stats.kehadiranGuru}" style="font-size: 36px; font-weight: 800; color: #111827; line-height: 1;">0</div>
+              <span style="font-size: 18px; font-weight: 700; color: #6b7280;">%</span>
+            </div>
+          </div>
+          
+          <div class="circular-progress-guru" data-progress="${stats.kehadiranGuru}" style="width: 64px; height: 64px; border-radius: 50%; background: conic-gradient(#0ea5e9 0deg, #f3f4f6 0deg); display: flex; align-items: center; justify-content: center; position: relative; z-index: 1;">
+            <div style="position: absolute; inset: 5px; background: white; border-radius: 50%;"></div>
+            <span class="material-icons-outlined" style="position: relative; z-index: 2; font-size: 24px; color: #0ea5e9;">how_to_reg</span>
           </div>
         </div>
       </div>
@@ -279,6 +295,26 @@
           window.requestAnimationFrame(step);
         } else {
           circle.style.background = `conic-gradient(#8b5cf6 ${targetDeg}deg, #f3f4f6 ${targetDeg}deg)`;
+        }
+      };
+      window.requestAnimationFrame(step);
+    }
+
+    const circleGuru = document.querySelector('.circular-progress-guru');
+    if (circleGuru) {
+      const targetVal = parseFloat(circleGuru.getAttribute('data-progress')) || 0;
+      const targetDeg = targetVal * 3.6;
+      let startTimestamp = null;
+      const step = (timestamp) => {
+        if (!startTimestamp) startTimestamp = timestamp;
+        const progress = Math.min((timestamp - startTimestamp) / 1500, 1);
+        const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+        const currentDeg = easeOutQuart * targetDeg;
+        circleGuru.style.background = `conic-gradient(#0ea5e9 ${currentDeg}deg, #f3f4f6 ${currentDeg}deg)`;
+        if (progress < 1) {
+          window.requestAnimationFrame(step);
+        } else {
+          circleGuru.style.background = `conic-gradient(#0ea5e9 ${targetDeg}deg, #f3f4f6 ${targetDeg}deg)`;
         }
       };
       window.requestAnimationFrame(step);
