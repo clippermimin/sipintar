@@ -32,6 +32,7 @@
     const riwayatHtml = laporan.length > 0
       ? laporan.map(lap => {
           const isDone = lap.status === 'Selesai';
+          const tglIndo = new Date(lap.tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
           return `
             <div class="ios-list-item">
               <div class="ios-list-icon ${isDone ? 'success' : 'warning'}">
@@ -39,7 +40,7 @@
               </div>
               <div class="ios-list-content">
                 <div class="ios-list-title">Sesi ${lap.sesi}</div>
-                <div class="ios-list-subtitle">${lap.tanggal}</div>
+                <div class="ios-list-subtitle">${tglIndo}</div>
               </div>
               <div class="ios-list-right" style="color: ${isDone ? '#34C759' : '#FF9500'}; display: flex; align-items: center; gap: 12px;">
                 <span>${lap.status}</span>
