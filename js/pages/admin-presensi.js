@@ -79,6 +79,17 @@
             <label style="display: block; font-size: 12px; font-weight: 600; color: #666; margin-bottom: 4px; text-transform: uppercase;">Sampai</label>
             <input type="date" id="presensiEnd" class="form-input">
           </div>
+          <div>
+            <label style="display: block; font-size: 12px; font-weight: 600; color: #666; margin-bottom: 4px; text-transform: uppercase;">Status</label>
+            <select id="presensiStatusFilter" class="form-input" style="min-width: 150px;">
+              <option value="Semua">Semua Status</option>
+              <option value="Hadir">Hadir</option>
+              <option value="Sakit">Sakit</option>
+              <option value="Izin Pribadi">Izin Pribadi</option>
+              <option value="Dinas Luar">Dinas Luar</option>
+              <option value="Cuti">Cuti</option>
+            </select>
+          </div>
           <div style="display: flex; gap: 8px;">
             <button id="btnPresensiHariIni" class="btn btn-outline" style="padding: 10px 14px; font-size: 13px;">Hari Ini</button>
             <button id="btnPresensiMinggu" class="btn btn-outline" style="padding: 10px 14px; font-size: 13px;">Minggu Ini</button>
@@ -88,7 +99,7 @@
         </div>
       </div>
 
-      <div id="presensiList" style="display: flex; flex-direction: column; gap: 8px;">
+      <div id="presensiList" style="background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); overflow-x: auto;">
         <p style="color: #666; text-align: center; padding: 32px 0;">Memuat data...</p>
       </div>
 
@@ -131,38 +142,76 @@
   async function loadAndRender(start, end) {
     document.getElementById('presensiList').innerHTML = '<p style="color:#666;text-align:center;padding:32px 0;">Memuat...</p>';
     _allPresensi = await window.APP_DATA.getRekapPresensi(start || null, end || null);
-    renderList(_allPresensi);
+    applyFiltersAndRender();
+  }
+
+  function applyFiltersAndRender() {
+    const statusFilter = document.getElementById('presensiStatusFilter').value;
+    let filtered = _allPresensi;
+    if (statusFilter !== 'Semua') {
+      filtered = _allPresensi.filter(p => p.status === statusFilter);
+    }
+    renderList(filtered);
   }
 
   function renderList(data) {
     const el = document.getElementById('presensiList');
     if (!data.length) {
-      el.innerHTML = '<p style="color:#666;text-align:center;padding:32px 0;">Tidak ada data presensi untuk rentang tanggal ini.</p>';
+      el.innerHTML = '<p style="color:#666;text-align:center;padding:32px 0;">Tidak ada data presensi yang sesuai.</p>';
       return;
     }
     const statusColors = { 'Hadir': '#34C759', 'Sakit': '#FF9500', 'Izin Pribadi': '#007AFF', 'Dinas Luar': '#AF52DE', 'Cuti': '#FF3B30' };
-    el.innerHTML = data.map(p => {
+    
+    let rowsHtml = data.map(p => {
       const color = statusColors[p.status] || '#8E8E93';
-      const tglIndo = new Date(p.tanggal).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+      const tglIndo = new Date(p.tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+      const avatarHtml = p.foto_url ? `<img src="${p.foto_url}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid ${color};">` : `<div style="width:36px;height:36px;border-radius:50%;background:#F2F2F7;display:flex;align-items:center;justify-content:center;"><span class="material-icons-outlined" style="color:#8E8E93;font-size:20px;">person</span></div>`;
+      
       return `
-        <div class="card" style="background:white;padding:16px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);display:flex;flex-direction:column;gap:12px;margin-bottom:12px;">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <tr style="border-bottom: 1px solid #f0f0f0; transition: background 0.2s;" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='white'">
+          <td style="padding: 12px 16px;">
             <div style="display:flex;align-items:center;gap:12px;">
-              ${p.foto_url ? `<img src="${p.foto_url}" style="width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid ${color};">` : `<div style="width:44px;height:44px;border-radius:50%;background:#F2F2F7;display:flex;align-items:center;justify-content:center;"><span class="material-icons-outlined" style="color:#8E8E93;">person</span></div>`}
+              ${avatarHtml}
               <div>
-                <div style="font-weight:600;font-size:15px;color:#333;">${p.profiles?.nama || '-'}</div>
-                <div style="font-size:12px;color:#8E8E93;margin-top:2px;">${tglIndo} &bull; ${p.waktu ? p.waktu.substring(0,5) + ' WIB' : '-'}</div>
-                ${p.catatan ? `<div style="font-size:12px;color:#666;margin-top:3px;font-style:italic;">${p.catatan}</div>` : ''}
+                <div style="font-weight:600;font-size:14px;color:#333;">${p.profiles?.nama || '-'}</div>
+                <div style="font-size:12px;color:#8E8E93;margin-top:2px;">${p.profiles?.nip || 'Tanpa NIP'}</div>
               </div>
             </div>
-            <span style="background:${color}22;color:${color};padding:6px 14px;border-radius:20px;font-size:13px;font-weight:700;white-space:nowrap;">${p.status}</span>
-          </div>
-          <div style="display:flex;justify-content:flex-end;gap:8px;border-top:1px solid #f0f0f0;padding-top:12px;">
-            <button class="btn btn-outline detail-presensi-btn" data-id="${p.id}" style="padding:4px 12px;font-size:12px;border-radius:6px;border:1px solid #1a73e8;color:#1a73e8;background:white;cursor:pointer;">Detail</button>
-            <button class="btn btn-outline del-presensi-btn" data-id="${p.id}" style="padding:4px 12px;font-size:12px;border-radius:6px;border:1px solid #ea4335;color:#ea4335;background:white;cursor:pointer;">Hapus</button>
-          </div>
-        </div>`;
+          </td>
+          <td style="padding: 12px 16px; color: #666; font-size: 13px;">
+            <div style="font-weight:500;color:#333;">${tglIndo}</div>
+            <div style="color:#8E8E93;margin-top:2px;">${p.waktu ? p.waktu.substring(0,5) + ' WIB' : '-'}</div>
+          </td>
+          <td style="padding: 12px 16px;">
+            <span style="background:${color}22;color:${color};padding:4px 10px;border-radius:12px;font-size:12px;font-weight:700;white-space:nowrap;">${p.status}</span>
+          </td>
+          <td style="padding: 12px 16px; color: #666; font-size: 13px; max-width: 250px;">
+            <div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${p.catatan || '-'}">${p.catatan || '-'}</div>
+          </td>
+          <td style="padding: 12px 16px; text-align: right; white-space: nowrap;">
+            <button class="detail-presensi-btn" data-id="${p.id}" style="background:none;border:none;cursor:pointer;color:#1a73e8;padding:4px;" title="Detail"><span class="material-icons-outlined" style="pointer-events:none;">visibility</span></button>
+            <button class="del-presensi-btn" data-id="${p.id}" style="background:none;border:none;cursor:pointer;color:#ea4335;padding:4px;" title="Hapus"><span class="material-icons-outlined" style="pointer-events:none;">delete</span></button>
+          </td>
+        </tr>
+      `;
     }).join('');
+
+    el.innerHTML = `
+      <table style="width: 100%; border-collapse: collapse; text-align: left;">
+        <thead style="background: #f8f9fa; border-bottom: 2px solid #eee;">
+          <tr>
+            <th style="padding: 12px 16px; font-weight: 600; color: #555; font-size: 13px; text-transform: uppercase;">Guru</th>
+            <th style="padding: 12px 16px; font-weight: 600; color: #555; font-size: 13px; text-transform: uppercase;">Waktu</th>
+            <th style="padding: 12px 16px; font-weight: 600; color: #555; font-size: 13px; text-transform: uppercase;">Status</th>
+            <th style="padding: 12px 16px; font-weight: 600; color: #555; font-size: 13px; text-transform: uppercase;">Catatan</th>
+            <th style="padding: 12px 16px; font-weight: 600; color: #555; font-size: 13px; text-transform: uppercase; text-align: right;">Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rowsHtml}
+        </tbody>
+      </table>
+    `;
 
     document.querySelectorAll('.detail-presensi-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
@@ -268,9 +317,14 @@
       await loadAndRender(s, e);
     });
 
+    document.getElementById('presensiStatusFilter')?.addEventListener('change', () => {
+      applyFiltersAndRender();
+    });
+
     document.getElementById('btnResetPresensi')?.addEventListener('click', async () => {
       document.getElementById('presensiStart').value = '';
       document.getElementById('presensiEnd').value = '';
+      document.getElementById('presensiStatusFilter').value = 'Semua';
       await loadAndRender(null, null);
     });
 
