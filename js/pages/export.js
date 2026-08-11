@@ -7,165 +7,84 @@
 
     const html = `
       <style>
-        .ios-page {
-          background: #F2F2F7;
-          min-height: 100vh;
-          padding-bottom: 80px;
-          font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-        }
-        .ios-nav {
-          padding: 48px 20px 16px;
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          background: rgba(242, 242, 247, 0.8);
-          backdrop-filter: blur(20px);
-          position: sticky;
-          top: 0;
-          z-index: 10;
-        }
-        .ios-back-btn {
-          width: 40px;
-          height: 40px;
-          border-radius: 20px;
-          background: white;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-          color: #007AFF;
-          text-decoration: none;
-          cursor: pointer;
-        }
-        .ios-nav-title {
-          font-size: 28px;
-          font-weight: 800;
-          color: #000;
-          margin: 0;
-          letter-spacing: -0.5px;
-        }
-        .ios-card {
-          background: white;
-          border-radius: 16px;
-          padding: 20px;
-          margin: 0 20px 20px;
-          box-shadow: 0 2px 12px rgba(0,0,0,0.03);
-        }
-        .ios-card-title {
-          font-size: 16px;
-          font-weight: 700;
-          margin-bottom: 16px;
-          color: #1C1C1E;
-        }
-        .ios-chip-group {
-          display: flex;
-          gap: 8px;
-          flex-wrap: wrap;
-        }
-        .ios-chip {
-          padding: 8px 16px;
-          border-radius: 20px;
-          background: #F2F2F7;
-          color: #8E8E93;
-          font-size: 14px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: 0.2s;
-          border: 2px solid transparent;
-        }
-        .ios-chip.active {
-          background: #007AFF;
-          color: white;
-        }
-        .ios-input-group {
-          display: flex;
-          gap: 12px;
-          margin-top: 16px;
-        }
-        .ios-input-wrap {
-          flex: 1;
-        }
-        .ios-input-label {
-          font-size: 12px;
-          color: #8E8E93;
-          font-weight: 600;
-          margin-bottom: 4px;
-          display: block;
-        }
-        .ios-input {
-          width: 100%;
-          background: #F2F2F7;
-          border: none;
-          border-radius: 10px;
-          padding: 12px;
-          font-size: 14px;
-          font-family: inherit;
-          color: #1C1C1E;
-          box-sizing: border-box;
-          outline: none;
-        }
-        .ios-btn-primary {
-          background: #34C759;
-          color: white;
-          border: none;
-          border-radius: 14px;
-          padding: 16px;
-          font-size: 17px;
-          font-weight: 700;
-          width: 100%;
-          cursor: pointer;
-          transition: 0.2s;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
-          box-shadow: 0 4px 16px rgba(52, 199, 89, 0.2);
-        }
-        .ios-btn-primary:active {
-          transform: scale(0.96);
+        .export-page { background: #f4f6f8; min-height: 100vh; padding: 32px 20px; font-family: 'Inter', sans-serif; display: flex; justify-content: center; }
+        .export-container { width: 100%; max-width: 500px; }
+        .export-header { display: flex; align-items: center; gap: 16px; margin-bottom: 32px; }
+        .btn-back { width: 44px; height: 44px; border-radius: 12px; background: white; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05); color: #1a73e8; text-decoration: none; cursor: pointer; transition: all 0.2s; border: 1px solid #eee; }
+        .btn-back:hover { background: #f8f9fa; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .export-title { margin: 0; font-size: 24px; font-weight: 700; color: #111827; }
+        .export-card { background: white; border-radius: 16px; padding: 24px; margin-bottom: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid #f3f4f6; }
+        .export-card-title { margin: 0 0 16px 0; font-size: 16px; font-weight: 600; color: #374151; display: flex; align-items: center; gap: 8px; }
+        .date-input-group { display: flex; gap: 16px; }
+        .date-input-wrap { flex: 1; }
+        .date-input-label { display: block; font-size: 13px; font-weight: 600; color: #6b7280; margin-bottom: 6px; }
+        .date-input { width: 100%; padding: 12px 16px; border: 1px solid #e5e7eb; border-radius: 12px; font-size: 14px; color: #1f2937; background: #f9fafb; outline: none; transition: all 0.2s; box-sizing: border-box; }
+        .date-input:focus { border-color: #1a73e8; background: white; box-shadow: 0 0 0 3px rgba(26,115,232,0.1); }
+        
+        .format-chips { display: flex; gap: 16px; }
+        .format-chip { flex: 1; padding: 16px; border-radius: 12px; border: 2px solid #e5e7eb; background: white; text-align: center; cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden; }
+        .format-chip .icon { font-size: 24px; margin-bottom: 8px; display: block; }
+        .format-chip .label { font-size: 14px; font-weight: 600; color: #4b5563; }
+        .format-chip:hover { border-color: #d1d5db; background: #f9fafb; }
+        
+        .format-chip.active-excel { border-color: #10b981; background: #ecfdf5; }
+        .format-chip.active-excel .label { color: #047857; }
+        
+        .format-chip.active-pdf { border-color: #ef4444; background: #fef2f2; }
+        .format-chip.active-pdf .label { color: #b91c1c; }
+        
+        .btn-download { width: 100%; background: #1a73e8; color: white; border: none; border-radius: 14px; padding: 16px; font-size: 16px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; box-shadow: 0 4px 12px rgba(26,115,232,0.25); transition: all 0.2s; }
+        .btn-download:hover { background: #1557b0; transform: translateY(-2px); box-shadow: 0 6px 16px rgba(26,115,232,0.3); }
+        .btn-download:active { transform: translateY(0); }
+        
+        @media (max-width: 480px) {
+          .date-input-group { flex-direction: column; }
         }
       </style>
       
-      <div class="page ios-page">
-        <div class="ios-nav">
-          <a class="ios-back-btn" onclick="window.Router.navigate('${backPath}')">
-            <span class="material-icons-outlined">arrow_back</span>
-          </a>
-          <h1 class="ios-nav-title">Unduh Rekap</h1>
-        </div>
-
-        <div class="ios-card">
-          <div class="ios-card-title">Rentang Waktu Laporan</div>
-          <div class="ios-chip-group time-chips">
-            <div class="ios-chip active" id="chipHariIni">Hari Ini</div>
-            <div class="ios-chip" id="chipMingguIni">Minggu Ini</div>
-            <div class="ios-chip" id="chipBulanIni">Bulan Ini</div>
-            <div class="ios-chip" id="chipKustom">Custom Date</div>
+      <div class="export-page">
+        <div class="export-container">
+          <div class="export-header">
+            <a onclick="window.Router.navigate('${backPath}')" class="btn-back">
+              <span class="material-icons-outlined">arrow_back</span>
+            </a>
+            <h1 class="export-title">Unduh Laporan</h1>
           </div>
-          
-          <div id="kustomDateInputs" class="ios-input-group" style="display: none;">
-            <div class="ios-input-wrap">
-              <label class="ios-input-label">Dari Tanggal</label>
-              <input type="date" id="startDate" class="ios-input">
-            </div>
-            <div class="ios-input-wrap">
-              <label class="ios-input-label">Sampai Tanggal</label>
-              <input type="date" id="endDate" class="ios-input">
+
+          <div class="export-card">
+            <h3 class="export-card-title">
+              <span class="material-icons-outlined" style="color: #1a73e8; font-size: 20px;">event</span> Rentang Waktu
+            </h3>
+            <div class="date-input-group">
+              <div class="date-input-wrap">
+                <label class="date-input-label">Dari Tanggal</label>
+                <input type="date" id="startDate" class="date-input">
+              </div>
+              <div class="date-input-wrap">
+                <label class="date-input-label">Sampai Tanggal</label>
+                <input type="date" id="endDate" class="date-input">
+              </div>
             </div>
           </div>
-        </div>
 
-        <div class="ios-card">
-          <div class="ios-card-title">Format File</div>
-          <div class="ios-chip-group format-chips">
-            <div class="ios-chip active" style="background: #E4F8EB; color: #34C759; border-color: #34C759;">Excel (.xlsx)</div>
-            <div class="ios-chip" style="background: #F2F2F7; color: #8E8E93;">PDF Document</div>
+          <div class="export-card">
+            <h3 class="export-card-title">
+              <span class="material-icons-outlined" style="color: #8b5cf6; font-size: 20px;">description</span> Format File
+            </h3>
+            <div class="format-chips">
+              <div class="format-chip active-excel" data-format="excel">
+                <span class="icon">📊</span>
+                <span class="label">Excel (.xlsx)</span>
+              </div>
+              <div class="format-chip" data-format="pdf">
+                <span class="icon">📄</span>
+                <span class="label">PDF Document</span>
+              </div>
+            </div>
           </div>
-        </div>
 
-        <div style="padding: 0 20px;">
-          <button id="btnDownload" class="ios-btn-primary">
-            <span class="material-icons-outlined">download</span> Unduh Data
+          <button id="btnDownload" class="btn-download">
+            <span class="material-icons-outlined">download</span> Unduh Rekap Laporan
           </button>
         </div>
       </div>
@@ -176,92 +95,54 @@
   }
 
   function bindEvents() {
-    // Time Chips
-    const timeChips = document.querySelectorAll('.time-chips .ios-chip');
-    const kustomInputs = document.getElementById('kustomDateInputs');
+    // Set default dates to today
+    const today = new Date();
+    const getLocalYYYYMMDD = (d) => {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
     
-    timeChips.forEach(chip => {
-      chip.addEventListener('click', () => {
-        timeChips.forEach(c => c.classList.remove('active'));
-        chip.classList.add('active');
-        
-        if (chip.id === 'chipKustom') {
-          kustomInputs.style.display = 'flex';
-        } else {
-          kustomInputs.style.display = 'none';
-        }
-      });
-    });
+    document.getElementById('startDate').value = getLocalYYYYMMDD(today);
+    document.getElementById('endDate').value = getLocalYYYYMMDD(today);
 
-    // Format Chips
-    const formatChips = document.querySelectorAll('.format-chips .ios-chip');
+    // Format Chips Logic
+    const formatChips = document.querySelectorAll('.format-chip');
     formatChips.forEach(chip => {
       chip.addEventListener('click', () => {
         formatChips.forEach(c => {
-          c.classList.remove('active');
-          c.style.background = '#F2F2F7';
-          c.style.color = '#8E8E93';
-          c.style.borderColor = 'transparent';
+          c.classList.remove('active-excel');
+          c.classList.remove('active-pdf');
         });
         
-        chip.classList.add('active');
-        if (chip.textContent.includes('Excel')) {
-          chip.style.background = '#E4F8EB';
-          chip.style.color = '#34C759';
-          chip.style.borderColor = '#34C759';
+        if (chip.dataset.format === 'excel') {
+          chip.classList.add('active-excel');
         } else {
-          chip.style.background = '#FFE5E5';
-          chip.style.color = '#FF3B30';
-          chip.style.borderColor = '#FF3B30';
+          chip.classList.add('active-pdf');
         }
       });
     });
 
-    // Download
+    // Download Logic
     document.getElementById('btnDownload').addEventListener('click', async () => {
       window.Components.showLoading('Menyiapkan file...');
       
       try {
-        let startDate = null;
-        let endDate = null;
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
         
-        const activeTime = document.querySelector('.time-chips .active').id;
-        const now = new Date();
-        
-        const getLocalYYYYMMDD = (d) => {
-          const year = d.getFullYear();
-          const month = String(d.getMonth() + 1).padStart(2, '0');
-          const day = String(d.getDate()).padStart(2, '0');
-          return `${year}-${month}-${day}`;
-        };
-
-        if (activeTime === 'chipKustom') {
-          startDate = document.getElementById('startDate').value;
-          endDate = document.getElementById('endDate').value;
-          if (!startDate || !endDate) throw new Error('Harap pilih rentang tanggal.');
-        } else if (activeTime === 'chipHariIni') {
-          startDate = getLocalYYYYMMDD(now);
-          endDate = getLocalYYYYMMDD(now);
-        } else if (activeTime === 'chipMingguIni') {
-          const day = now.getDay() || 7; 
-          const firstDay = new Date(now);
-          firstDay.setDate(now.getDate() - day + 1);
-          const lastDay = new Date(now);
-          lastDay.setDate(now.getDate() - day + 7);
-          
-          startDate = getLocalYYYYMMDD(firstDay);
-          endDate = getLocalYYYYMMDD(lastDay);
-        } else if (activeTime === 'chipBulanIni') {
-          const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-          const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-          startDate = getLocalYYYYMMDD(firstDay);
-          endDate = getLocalYYYYMMDD(lastDay);
+        if (!startDate || !endDate) {
+          throw new Error('Harap tentukan rentang tanggal (Dari & Sampai).');
+        }
+        if (startDate > endDate) {
+          throw new Error('Tanggal awal tidak boleh lebih besar dari tanggal akhir.');
         }
 
         const data = await window.APP_DATA.getExportData(startDate, endDate);
         if (!data || data.length === 0) throw new Error('Tidak ada data laporan pada rentang waktu ini.');
 
-        const isExcel = document.querySelector('.format-chips .active').textContent.includes('Excel');
+        const isExcel = document.querySelector('.format-chip.active-excel') !== null;
 
         const headers = ['Tanggal', 'Sesi', 'Guru/Petugas', 'Nama Siswa', 'Kelas', 'Status Kehadiran', 'Catatan Piket'];
         const rows = [];
