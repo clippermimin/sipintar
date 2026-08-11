@@ -127,6 +127,22 @@
           <span class="material-icons-outlined">download</span> Export Laporan
         </button>
       </div>
+
+      <!-- Modal Detail Laporan -->
+      <div id="modalDetail" class="modal-overlay hidden" style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; display: none; align-items: center; justify-content: center;">
+        <div style="background: white; width: 100%; max-width: 600px; border-radius: 16px; padding: 24px; max-height: 90vh; overflow-y: auto;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 style="margin: 0; font-size: 20px;">Detail Laporan Piket</h3>
+            <button class="btn-tutup-detail" style="background: none; border: none; cursor: pointer; color: #9ca3af;"><span class="material-icons-outlined">close</span></button>
+          </div>
+          <div id="detailContent" style="font-size: 14px; color: #333;">
+            <p>Memuat detail...</p>
+          </div>
+          <div style="margin-top: 24px; text-align: right;">
+            <button class="btn-tutup-detail btn btn-primary" style="padding: 10px 20px; border-radius: 8px; border: none; background: #2563eb; color: white; cursor: pointer;">Tutup</button>
+          </div>
+        </div>
+      </div>
     `;
 
     const html = adminLayout('laporan', content);
@@ -157,6 +173,80 @@
     document.getElementById('btnExportLaporan')?.addEventListener('click', () => {
       window.Router.navigate('/export');
     });
+
+    const modalDetail = document.getElementById('modalDetail');
+    document.querySelectorAll('.btn-tutup-detail').forEach(btn => {
+      btn.addEventListener('click', () => {
+        modalDetail.classList.add('hidden');
+        modalDetail.style.display = 'none';
+      });
+    });
+  }
+
+  async function showDetailModal(laporan) {
+    const modalDetail = document.getElementById('modalDetail');
+    const detailContent = document.getElementById('detailContent');
+    
+    modalDetail.classList.remove('hidden');
+    modalDetail.style.display = 'flex';
+    detailContent.innerHTML = '<p>Memuat detail...</p>';
+
+    const { data: absensi, error } = await window.supabase
+      .from('absensi_piket')
+      .select('*, siswa(nama, kelas(nama))')
+      .eq('laporan_id', laporan.id);
+
+    if (error) {
+      detailContent.innerHTML = '<p style="color:red;">Gagal memuat detail absensi.</p>';
+      return;
+    }
+
+    let absensiHtml = '<p style="color:#666; font-style:italic;">Semua siswa hadir.</p>';
+    if (absensi && absensi.length > 0) {
+      absensiHtml = `
+        <table style="width: 100%; border-collapse: collapse; margin-top: 12px;">
+          <thead>
+            <tr style="background: #f8f9fa; border-bottom: 2px solid #eee;">
+              <th style="padding: 10px; text-align: left; font-size: 13px; color: #666;">Nama Siswa</th>
+              <th style="padding: 10px; text-align: left; font-size: 13px; color: #666;">Kelas</th>
+              <th style="padding: 10px; text-align: left; font-size: 13px; color: #666;">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${absensi.map(a => `
+              <tr style="border-bottom: 1px solid #eee;">
+                <td style="padding: 10px; font-weight: 500;">${a.siswa?.nama || '-'}</td>
+                <td style="padding: 10px;">${a.siswa?.kelas?.nama || '-'}</td>
+                <td style="padding: 10px;">
+                  <span style="padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 500; 
+                    background: ${a.status === 'Sakit' ? '#e3f2fd' : (a.status === 'Izin' ? '#fff3e0' : '#fce8e6')};
+                    color: ${a.status === 'Sakit' ? '#1976d2' : (a.status === 'Izin' ? '#f57c00' : '#d32f2f')};">
+                    ${a.status}
+                  </span>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    detailContent.innerHTML = `
+      <div style="display: grid; grid-template-columns: 100px 1fr; gap: 8px; margin-bottom: 16px;">
+        <div style="color: #666; font-weight: 500;">Tanggal</div>
+        <div>: ${laporan.tanggal}</div>
+        <div style="color: #666; font-weight: 500;">Sesi</div>
+        <div>: ${laporan.sesi}</div>
+        <div style="color: #666; font-weight: 500;">Guru Piket</div>
+        <div>: ${laporan.profiles?.nama || '-'}</div>
+        <div style="color: #666; font-weight: 500;">Status</div>
+        <div>: ${laporan.status}</div>
+        <div style="color: #666; font-weight: 500;">Catatan</div>
+        <div>: ${laporan.catatan || '-'}</div>
+      </div>
+      <h4 style="margin: 20px 0 8px 0; border-bottom: 1px solid #eee; padding-bottom: 8px;">Daftar Siswa Tidak Hadir</h4>
+      ${absensiHtml}
+    `;
   }
 
   function renderList(laporans) {
@@ -179,11 +269,22 @@
             </div>
             <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
               ${badgeHtml}
-              <button class="btn btn-outline del-laporan-btn" data-id="${l.id}" style="padding:4px 8px;font-size:12px;border-radius:4px;border:1px solid #ea4335;color:#ea4335;background:white;cursor:pointer;">Hapus</button>
+              <div style="display:flex;gap:8px;">
+                <button class="btn btn-outline detail-laporan-btn" data-id="${l.id}" style="padding:4px 8px;font-size:12px;border-radius:4px;border:1px solid #1a73e8;color:#1a73e8;background:white;cursor:pointer;">Detail</button>
+                <button class="btn btn-outline del-laporan-btn" data-id="${l.id}" style="padding:4px 8px;font-size:12px;border-radius:4px;border:1px solid #ea4335;color:#ea4335;background:white;cursor:pointer;">Hapus</button>
+              </div>
             </div>
           </div>
         </div>`;
     }).join('');
+
+    document.querySelectorAll('.detail-laporan-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = e.target.dataset.id;
+        const laporan = window._laporanAll.find(l => l.id === id);
+        if (laporan) showDetailModal(laporan);
+      });
+    });
 
     document.querySelectorAll('.del-laporan-btn').forEach(btn => {
       btn.addEventListener('click', async (e) => {
