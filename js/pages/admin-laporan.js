@@ -7,7 +7,6 @@
       { id: 'kelas', icon: 'class', label: 'Kelas', path: '/admin/kelas' },
       { id: 'laporan', icon: 'description', label: 'Laporan Piket', path: '/admin/laporan' },
       { id: 'presensi', icon: 'how_to_reg', label: 'Rekap Presensi', path: '/admin/presensi' },
-      { id: 'export', icon: 'download', label: 'Laporan Presensi', path: '/export' },
       { id: 'pengaturan', icon: 'settings', label: 'Pengaturan', path: '/admin/pengaturan' },
     ];
     
