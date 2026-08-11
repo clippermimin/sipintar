@@ -540,7 +540,7 @@ window.APP_DATA = {
     const { count: laporanHariIni } = await window.supabase.from('laporan_piket').select('*', { count: 'exact', head: true }).eq('tanggal', today);
     
     const { count: tidakHadir } = await window.supabase.from('absensi_piket').select('id, laporan_piket!inner(tanggal)', { count: 'exact', head: true }).eq('laporan_piket.tanggal', today);
-    const { count: guruHadir } = await window.supabase.from('presensi').select('*', { count: 'exact', head: true }).eq('tanggal', today).eq('status', 'Hadir');
+    const { count: guruTidakHadir } = await window.supabase.from('presensi').select('*', { count: 'exact', head: true }).eq('tanggal', today).neq('status', 'Hadir');
     
     let kehadiran = 100;
     if (totalSiswa > 0 && tidakHadir !== null) {
@@ -548,10 +548,10 @@ window.APP_DATA = {
        kehadiran = persentase < 0 ? 0 : parseFloat(persentase.toFixed(1));
     }
 
-    let kehadiranGuru = 0;
-    if (totalGuru > 0 && guruHadir !== null) {
-       const persentaseGuru = (guruHadir / totalGuru) * 100;
-       kehadiranGuru = parseFloat(persentaseGuru.toFixed(1));
+    let kehadiranGuru = 100;
+    if (totalGuru > 0 && guruTidakHadir !== null) {
+       const persentaseGuru = ((totalGuru - guruTidakHadir) / totalGuru) * 100;
+       kehadiranGuru = persentaseGuru < 0 ? 0 : parseFloat(persentaseGuru.toFixed(1));
     }
 
     return { 
