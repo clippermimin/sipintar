@@ -163,8 +163,9 @@
             <div class="list-item-title" style="font-weight: 500; font-size: 14px; color: #333;">${act.title}</div>
             <div class="list-item-subtitle" style="font-size: 12px; color: #666;">${act.subtitle}</div>
           </div>
-          <div class="list-item-right" style="font-size: 12px; color: #999;">
-            ${act.time}
+          <div class="list-item-right" style="font-size: 12px; color: #999; text-align: right; min-width: 60px;">
+            <div style="font-weight: 600; color: #6b7280; margin-bottom: 2px;">${act.dateStr}</div>
+            <div style="font-size: 11px;">${act.timeStr}</div>
           </div>
         </div>
       `).join('');

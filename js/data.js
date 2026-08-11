@@ -564,20 +564,49 @@ window.APP_DATA = {
   },
 
   async getAdminAktivitas() {
-    const { data } = await window.supabase
-      .from('laporan_piket')
-      .select('id, tanggal, sesi, created_at, profiles!guru_id(nama)')
-      .order('created_at', { ascending: false })
-      .limit(5);
+    const [laporanRes, presensiRes] = await Promise.all([
+      window.supabase.from('laporan_piket').select('id, sesi, created_at, profiles!guru_id(nama)').order('created_at', { ascending: false }).limit(5),
+      window.supabase.from('presensi').select('id, status, created_at, profiles!guru_id(nama)').order('created_at', { ascending: false }).limit(5)
+    ]);
 
-    if (!data) return [];
-    
-    return data.map(item => ({
+    const laporan = (laporanRes.data || []).map(item => ({
       icon: 'description',
-      color: '#1a73e8',
+      color: '#f59e0b',
       title: 'Laporan Piket Masuk',
       subtitle: `Dilaporkan oleh ${item.profiles?.nama || 'Unknown'} (Sesi ${item.sesi})`,
-      time: new Date(item.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+      created_at: new Date(item.created_at)
     }));
+
+    const presensi = (presensiRes.data || []).map(item => {
+      let icon = 'how_to_reg';
+      let color = '#10b981';
+      let statusLabel = item.status;
+      
+      if (item.status !== 'Hadir') {
+        icon = 'event_busy';
+        color = '#ef4444';
+      }
+
+      return {
+        icon,
+        color,
+        title: `Presensi Guru: ${statusLabel}`,
+        subtitle: `${item.profiles?.nama || 'Unknown'} telah mengisi presensi`,
+        created_at: new Date(item.created_at)
+      };
+    });
+
+    const gabungan = [...laporan, ...presensi].sort((a, b) => b.created_at - a.created_at).slice(0, 7);
+    
+    return gabungan.map(item => {
+      const d = item.created_at;
+      const tgl = d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+      const wkt = d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace('.', ':');
+      return {
+        ...item,
+        dateStr: tgl,
+        timeStr: wkt
+      };
+    });
   }
 };
