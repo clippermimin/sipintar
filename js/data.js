@@ -360,7 +360,8 @@ window.APP_DATA = {
   },
   
   async getSiswaAbsenHariIni() {
-    const today = (await window.APP_DATA.getHariTanggal()).tanggal || new Date().toISOString().split('T')[0];
+    const d = new Date();
+    const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     const { data, error } = await window.supabase
       .from('absensi_piket')
       .select(`
@@ -388,7 +389,8 @@ window.APP_DATA = {
   },
 
   async getGuruAbsenHariIni() {
-    const today = (await window.APP_DATA.getHariTanggal()).tanggal || new Date().toISOString().split('T')[0];
+    const d = new Date();
+    const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     const { data, error } = await window.supabase
       .from('presensi')
       .select('status, profiles(nama)')
