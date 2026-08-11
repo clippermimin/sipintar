@@ -83,6 +83,27 @@
             </div>
           </div>
 
+          <div class="export-card" id="previewContainer" style="display: none;">
+            <h3 class="export-card-title">
+              <span class="material-icons-outlined" style="color: #f59e0b; font-size: 20px;">preview</span> Preview Data
+            </h3>
+            <div style="overflow-x: auto;">
+              <table style="width: 100%; border-collapse: collapse; min-width: 400px;">
+                <thead>
+                  <tr style="background: #f9fafb; border-bottom: 2px solid #e5e7eb; text-align: left;">
+                    <th style="padding: 12px; font-size: 13px; color: #6b7280; font-weight: 600;">Tanggal</th>
+                    <th style="padding: 12px; font-size: 13px; color: #6b7280; font-weight: 600;">Sesi</th>
+                    <th style="padding: 12px; font-size: 13px; color: #6b7280; font-weight: 600;">Petugas</th>
+                    <th style="padding: 12px; font-size: 13px; color: #6b7280; font-weight: 600; text-align: center;">Siswa Tdk Hadir</th>
+                  </tr>
+                </thead>
+                <tbody id="previewBody">
+                </tbody>
+              </table>
+            </div>
+            <p id="previewEmpty" style="text-align: center; color: #6b7280; font-size: 14px; margin-top: 16px; display: none;">Tidak ada data pada rentang tanggal ini.</p>
+          </div>
+
           <button id="btnDownload" class="btn-download">
             <span class="material-icons-outlined">download</span> Unduh Rekap Laporan
           </button>
@@ -106,6 +127,68 @@
     
     document.getElementById('startDate').value = getLocalYYYYMMDD(today);
     document.getElementById('endDate').value = getLocalYYYYMMDD(today);
+
+    async function updatePreview() {
+      const startDate = document.getElementById('startDate').value;
+      const endDate = document.getElementById('endDate').value;
+      
+      const previewContainer = document.getElementById('previewContainer');
+      const previewBody = document.getElementById('previewBody');
+      const previewEmpty = document.getElementById('previewEmpty');
+      
+      previewContainer.style.display = 'block';
+      previewBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:16px; color:#666; font-size: 14px;">Memuat preview...</td></tr>';
+      previewEmpty.style.display = 'none';
+
+      try {
+        if (!startDate || !endDate || startDate > endDate) {
+          previewBody.innerHTML = '';
+          previewEmpty.textContent = 'Rentang tanggal tidak valid.';
+          previewEmpty.style.display = 'block';
+          return;
+        }
+
+        const data = await window.APP_DATA.getExportData(startDate, endDate);
+        
+        if (!data || data.length === 0) {
+          previewBody.innerHTML = '';
+          previewEmpty.textContent = 'Tidak ada data laporan pada rentang waktu ini.';
+          previewEmpty.style.display = 'block';
+          return;
+        }
+
+        previewBody.innerHTML = data.map(laporan => {
+          let petugas = laporan.profiles?.nama || '-';
+          const petugasMatch = (laporan.catatan || '').match(/^\[(.*?)\]\s*/);
+          if (petugasMatch) {
+            petugas = petugasMatch[1].replace(/Petugas \d+:\s/g, '');
+          }
+          const tglIndo = new Date(laporan.tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+          const countAbsen = laporan.absensi_piket?.length || 0;
+          return `
+            <tr style="border-bottom: 1px solid #f3f4f6;">
+              <td style="padding: 12px; font-size: 13px; color: #374151;">${tglIndo}</td>
+              <td style="padding: 12px; font-size: 13px; color: #374151;">Sesi ${laporan.sesi}</td>
+              <td style="padding: 12px; font-size: 13px; color: #374151; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${petugas}">${petugas}</td>
+              <td style="padding: 12px; font-size: 13px; color: #374151; text-align: center;">
+                <span style="background: ${countAbsen > 0 ? '#fee2e2' : '#ecfdf5'}; color: ${countAbsen > 0 ? '#b91c1c' : '#047857'}; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;">
+                  ${countAbsen} Siswa
+                </span>
+              </td>
+            </tr>
+          `;
+        }).join('');
+
+      } catch (e) {
+        previewBody.innerHTML = '';
+        previewEmpty.textContent = 'Gagal memuat preview data.';
+        previewEmpty.style.display = 'block';
+      }
+    }
+
+    document.getElementById('startDate').addEventListener('change', updatePreview);
+    document.getElementById('endDate').addEventListener('change', updatePreview);
+    updatePreview();
 
     // Format Chips Logic
     const formatChips = document.querySelectorAll('.format-chip');
