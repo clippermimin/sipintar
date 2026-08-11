@@ -349,11 +349,12 @@ window.APP_DATA = {
     return data.map(d => {
       const dateObj = new Date(d.created_at);
       const timeStr = dateObj.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace('.', ':') + ' WIB';
+      const tglIndo = new Date(d.tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
       return {
         icon: 'assignment_turned_in',
         color: d.status === 'Selesai' ? 'success' : 'primary',
         title: `Laporan Piket ${d.sesi}`,
-        subtitle: `Tanggal ${d.tanggal}`,
+        subtitle: `Tanggal ${tglIndo}`,
         time: timeStr
       };
     });
