@@ -289,9 +289,7 @@
       }
       const dataUrl = canvas.toDataURL('image/jpeg');
       
-      // DUMMY: Kita tidak butuh compress/blob karena tidak diupload
-      // capturedBlob = await compressImageToBlob(dataUrl); 
-      capturedBlob = null; 
+      capturedBlob = await compressImageToBlob(dataUrl); 
       
       stopStream();
       return dataUrl;
@@ -359,7 +357,7 @@
           try {
             const result = await window.APP_DATA.submitPresensi({
               status: 'Hadir',
-              fotoBlob: null, // DUMMY: Jangan kirim foto untuk hemat storage
+              fotoBlob: capturedBlob,
               latitude: gpsCoords?.lat || -6.200000,
               longitude: gpsCoords?.lng || 106.816666,
               catatan: null
