@@ -56,6 +56,8 @@
   }
 
   let _allPresensi = [];
+  let _sortCol = 'waktu';
+  let _sortDir = 'desc';
 
   async function render() {
     if (window.APP_STATE.role !== 'admin') { window.Router.navigate('/login'); return; }
@@ -91,8 +93,6 @@
             </select>
           </div>
           <div style="display: flex; gap: 8px;">
-            <button id="btnPresensiHariIni" class="btn btn-outline" style="padding: 10px 14px; font-size: 13px;">Hari Ini</button>
-            <button id="btnPresensiMinggu" class="btn btn-outline" style="padding: 10px 14px; font-size: 13px;">Minggu Ini</button>
             <button id="btnApplyPresensi" class="btn btn-primary" style="padding: 10px 16px;">Terapkan</button>
             <button id="btnResetPresensi" class="btn btn-outline" style="padding: 10px 16px;">Reset</button>
           </div>
@@ -147,10 +147,32 @@
 
   function applyFiltersAndRender() {
     const statusFilter = document.getElementById('presensiStatusFilter').value;
-    let filtered = _allPresensi;
+    let filtered = [..._allPresensi];
     if (statusFilter !== 'Semua') {
-      filtered = _allPresensi.filter(p => p.status === statusFilter);
+      filtered = filtered.filter(p => p.status === statusFilter);
     }
+
+    filtered.sort((a, b) => {
+      let valA, valB;
+      if (_sortCol === 'guru') {
+        valA = (a.profiles?.nama || '').toLowerCase();
+        valB = (b.profiles?.nama || '').toLowerCase();
+      } else if (_sortCol === 'waktu') {
+        valA = new Date(a.tanggal + 'T' + (a.waktu || '00:00:00')).getTime();
+        valB = new Date(b.tanggal + 'T' + (b.waktu || '00:00:00')).getTime();
+      } else if (_sortCol === 'status') {
+        valA = a.status.toLowerCase();
+        valB = b.status.toLowerCase();
+      } else {
+        valA = a.tanggal;
+        valB = b.tanggal;
+      }
+      
+      if (valA < valB) return _sortDir === 'asc' ? -1 : 1;
+      if (valA > valB) return _sortDir === 'asc' ? 1 : -1;
+      return 0;
+    });
+
     renderList(filtered);
   }
 
@@ -196,13 +218,18 @@
       `;
     }).join('');
 
+    const getSortIcon = (col) => {
+      if (_sortCol !== col) return '<span class="material-icons-outlined" style="font-size:14px;vertical-align:middle;color:#ccc;">unfold_more</span>';
+      return `<span class="material-icons-outlined" style="font-size:14px;vertical-align:middle;">${_sortDir === 'asc' ? 'arrow_upward' : 'arrow_downward'}</span>`;
+    };
+
     el.innerHTML = `
       <table style="width: 100%; border-collapse: collapse; text-align: left;">
         <thead style="background: #f8f9fa; border-bottom: 2px solid #eee;">
           <tr>
-            <th style="padding: 12px 16px; font-weight: 600; color: #555; font-size: 13px; text-transform: uppercase;">Guru</th>
-            <th style="padding: 12px 16px; font-weight: 600; color: #555; font-size: 13px; text-transform: uppercase;">Waktu</th>
-            <th style="padding: 12px 16px; font-weight: 600; color: #555; font-size: 13px; text-transform: uppercase;">Status</th>
+            <th class="sort-col" data-col="guru" style="padding: 12px 16px; font-weight: 600; color: #555; font-size: 13px; text-transform: uppercase; cursor: pointer; user-select: none; transition: background 0.2s;" onmouseover="this.style.background='#f1f3f4'" onmouseout="this.style.background='transparent'">Guru ${getSortIcon('guru')}</th>
+            <th class="sort-col" data-col="waktu" style="padding: 12px 16px; font-weight: 600; color: #555; font-size: 13px; text-transform: uppercase; cursor: pointer; user-select: none; transition: background 0.2s;" onmouseover="this.style.background='#f1f3f4'" onmouseout="this.style.background='transparent'">Waktu ${getSortIcon('waktu')}</th>
+            <th class="sort-col" data-col="status" style="padding: 12px 16px; font-weight: 600; color: #555; font-size: 13px; text-transform: uppercase; cursor: pointer; user-select: none; transition: background 0.2s;" onmouseover="this.style.background='#f1f3f4'" onmouseout="this.style.background='transparent'">Status ${getSortIcon('status')}</th>
             <th style="padding: 12px 16px; font-weight: 600; color: #555; font-size: 13px; text-transform: uppercase;">Catatan</th>
             <th style="padding: 12px 16px; font-weight: 600; color: #555; font-size: 13px; text-transform: uppercase; text-align: right;">Aksi</th>
           </tr>
@@ -212,6 +239,19 @@
         </tbody>
       </table>
     `;
+
+    document.querySelectorAll('.sort-col').forEach(th => {
+      th.addEventListener('click', (e) => {
+        const col = e.currentTarget.dataset.col;
+        if (_sortCol === col) {
+          _sortDir = _sortDir === 'asc' ? 'desc' : 'asc';
+        } else {
+          _sortCol = col;
+          _sortDir = 'asc';
+        }
+        applyFiltersAndRender();
+      });
+    });
 
     document.querySelectorAll('.detail-presensi-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
@@ -293,24 +333,6 @@
   }
 
   function bindEvents() {
-    document.getElementById('btnPresensiHariIni')?.addEventListener('click', async () => {
-      const today = getLocalDate(new Date());
-      document.getElementById('presensiStart').value = today;
-      document.getElementById('presensiEnd').value = today;
-      await loadAndRender(today, today);
-    });
-
-    document.getElementById('btnPresensiMinggu')?.addEventListener('click', async () => {
-      const now = new Date();
-      const day = now.getDay() || 7;
-      const first = new Date(now); first.setDate(now.getDate() - day + 1);
-      const last = new Date(now); last.setDate(now.getDate() - day + 7);
-      const s = getLocalDate(first); const e = getLocalDate(last);
-      document.getElementById('presensiStart').value = s;
-      document.getElementById('presensiEnd').value = e;
-      await loadAndRender(s, e);
-    });
-
     document.getElementById('btnApplyPresensi')?.addEventListener('click', async () => {
       const s = document.getElementById('presensiStart').value;
       const e = document.getElementById('presensiEnd').value;
