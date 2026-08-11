@@ -226,7 +226,12 @@
             <div class="ios-greeting-subtitle">${hariTanggal}</div>
             <h1 class="ios-greeting-title">${greeting}, ${namaGuru}</h1>
           </div>
-          <div class="ios-avatar">${guru.avatar}</div>
+          <div style="display: flex; gap: 12px; align-items: center;">
+            <div class="ios-avatar">${guru.avatar}</div>
+            <button onclick="window.APP_DATA.logout()" style="background: white; border: none; color: #FF3B30; cursor: pointer; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 50%; box-shadow: 0 2px 8px rgba(0,0,0,0.05);" title="Logout">
+              <span class="material-icons-outlined">logout</span>
+            </button>
+          </div>
         </div>
 
         <!-- Main Status Card -->

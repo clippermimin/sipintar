@@ -45,7 +45,7 @@ window.Components = {
       { id: 'dashboard', icon: 'dashboard', label: 'Dashboard', path: '/guru/dashboard' },
       { id: 'piket', icon: 'assignment', label: 'Piket', path: '/guru/piket' },
       { id: 'absensi', icon: 'person_search', label: 'Absensi', path: '/guru/presensi' },
-      { id: 'profil', icon: 'account_circle', label: 'Profil', path: '#' }
+      { id: 'profil', icon: 'account_circle', label: 'Profil', path: '/guru/profil' }
     ];
     
     return `
