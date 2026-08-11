@@ -98,6 +98,22 @@
           <span class="material-icons-outlined">download</span> Export ke Excel
         </button>
       </div>
+
+      <!-- Modal Detail Presensi -->
+      <div id="modalDetailPresensi" class="modal-overlay hidden" style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; display: none; align-items: center; justify-content: center;">
+        <div style="background: white; width: 100%; max-width: 500px; border-radius: 16px; padding: 24px; max-height: 90vh; overflow-y: auto;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 style="margin: 0; font-size: 20px;">Detail Presensi</h3>
+            <button class="btn-tutup-detail-presensi" style="background: none; border: none; cursor: pointer; color: #9ca3af;"><span class="material-icons-outlined">close</span></button>
+          </div>
+          <div id="detailPresensiContent" style="font-size: 14px; color: #333;">
+            <p>Memuat detail...</p>
+          </div>
+          <div style="margin-top: 24px; text-align: right;">
+            <button class="btn-tutup-detail-presensi btn btn-primary" style="padding: 10px 20px; border-radius: 8px; border: none; background: #2563eb; color: white; cursor: pointer;">Tutup</button>
+          </div>
+        </div>
+      </div>
     `;
 
     window.Components.renderPage(adminLayout('presensi', content));
@@ -128,19 +144,90 @@
     const statusColors = { 'Hadir': '#34C759', 'Sakit': '#FF9500', 'Izin Pribadi': '#007AFF', 'Dinas Luar': '#AF52DE', 'Cuti': '#FF3B30' };
     el.innerHTML = data.map(p => {
       const color = statusColors[p.status] || '#8E8E93';
+      const tglIndo = new Date(p.tanggal).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
       return `
-        <div style="background:white;padding:16px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);display:flex;justify-content:space-between;align-items:center;gap:12px;">
-          <div style="display:flex;align-items:center;gap:12px;">
-            ${p.foto_url ? `<img src="${p.foto_url}" style="width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid ${color};">` : `<div style="width:44px;height:44px;border-radius:50%;background:#F2F2F7;display:flex;align-items:center;justify-content:center;"><span class="material-icons-outlined" style="color:#8E8E93;">person</span></div>`}
-            <div>
-              <div style="font-weight:600;font-size:15px;color:#333;">${p.profiles?.nama || '-'}</div>
-              <div style="font-size:12px;color:#8E8E93;margin-top:2px;">${p.tanggal} &bull; ${p.waktu ? p.waktu.substring(0,5) + ' WIB' : '-'}</div>
-              ${p.catatan ? `<div style="font-size:12px;color:#666;margin-top:3px;font-style:italic;">${p.catatan}</div>` : ''}
+        <div class="card" style="background:white;padding:16px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);display:flex;flex-direction:column;gap:12px;margin-bottom:12px;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+            <div style="display:flex;align-items:center;gap:12px;">
+              ${p.foto_url ? `<img src="${p.foto_url}" style="width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid ${color};">` : `<div style="width:44px;height:44px;border-radius:50%;background:#F2F2F7;display:flex;align-items:center;justify-content:center;"><span class="material-icons-outlined" style="color:#8E8E93;">person</span></div>`}
+              <div>
+                <div style="font-weight:600;font-size:15px;color:#333;">${p.profiles?.nama || '-'}</div>
+                <div style="font-size:12px;color:#8E8E93;margin-top:2px;">${tglIndo} &bull; ${p.waktu ? p.waktu.substring(0,5) + ' WIB' : '-'}</div>
+                ${p.catatan ? `<div style="font-size:12px;color:#666;margin-top:3px;font-style:italic;">${p.catatan}</div>` : ''}
+              </div>
             </div>
+            <span style="background:${color}22;color:${color};padding:6px 14px;border-radius:20px;font-size:13px;font-weight:700;white-space:nowrap;">${p.status}</span>
           </div>
-          <span style="background:${color}22;color:${color};padding:6px 14px;border-radius:20px;font-size:13px;font-weight:700;white-space:nowrap;">${p.status}</span>
+          <div style="display:flex;justify-content:flex-end;gap:8px;border-top:1px solid #f0f0f0;padding-top:12px;">
+            <button class="btn btn-outline detail-presensi-btn" data-id="${p.id}" style="padding:4px 12px;font-size:12px;border-radius:6px;border:1px solid #1a73e8;color:#1a73e8;background:white;cursor:pointer;">Detail</button>
+            <button class="btn btn-outline del-presensi-btn" data-id="${p.id}" style="padding:4px 12px;font-size:12px;border-radius:6px;border:1px solid #ea4335;color:#ea4335;background:white;cursor:pointer;">Hapus</button>
+          </div>
         </div>`;
     }).join('');
+
+    document.querySelectorAll('.detail-presensi-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = e.target.dataset.id;
+        const presensi = _allPresensi.find(p => p.id === id);
+        if (presensi) showDetailPresensi(presensi);
+      });
+    });
+
+    document.querySelectorAll('.del-presensi-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        if(confirm('Yakin ingin menghapus data presensi ini?')) {
+          const id = e.target.dataset.id;
+          const { error } = await window.supabase.from('presensi').delete().eq('id', id);
+          if (error) {
+            window.Components.toast('Gagal menghapus presensi: ' + error.message, 'error');
+          } else {
+            window.Components.toast('Presensi berhasil dihapus');
+            const s = document.getElementById('presensiStart').value;
+            const end = document.getElementById('presensiEnd').value;
+            await loadAndRender(s || null, end || null);
+          }
+        }
+      });
+    });
+  }
+
+  function showDetailPresensi(p) {
+    const modal = document.getElementById('modalDetailPresensi');
+    const content = document.getElementById('detailPresensiContent');
+    const tglIndo = new Date(p.tanggal).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    
+    let photoHtml = '';
+    if (p.foto_url) {
+      photoHtml = `<div style="margin-top: 16px; text-align: center;"><img src="${p.foto_url}" style="max-width: 100%; max-height: 200px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);"></div>`;
+    }
+    
+    let locationHtml = '';
+    if (p.latitude && p.longitude) {
+      locationHtml = `
+        <div style="color: #666; font-weight: 500;">Lokasi</div>
+        <div>: <a href="https://maps.google.com/?q=${p.latitude},${p.longitude}" target="_blank" style="color: #1a73e8; text-decoration: none;">Lihat di Peta</a></div>
+      `;
+    }
+
+    content.innerHTML = `
+      <div style="display: grid; grid-template-columns: 100px 1fr; gap: 8px;">
+        <div style="color: #666; font-weight: 500;">Nama Guru</div>
+        <div style="font-weight: 600;">: ${p.profiles?.nama || '-'}</div>
+        <div style="color: #666; font-weight: 500;">Tanggal</div>
+        <div>: ${tglIndo}</div>
+        <div style="color: #666; font-weight: 500;">Waktu</div>
+        <div>: ${p.waktu ? p.waktu.substring(0,8) + ' WIB' : '-'}</div>
+        <div style="color: #666; font-weight: 500;">Status</div>
+        <div>: <strong>${p.status}</strong></div>
+        <div style="color: #666; font-weight: 500;">Catatan</div>
+        <div>: ${p.catatan || '-'}</div>
+        ${locationHtml}
+      </div>
+      ${photoHtml}
+    `;
+    
+    modal.classList.remove('hidden');
+    modal.style.display = 'flex';
   }
 
   function bindDrawer() {
@@ -206,6 +293,14 @@
       const s = document.getElementById('presensiStart').value || 'all';
       const e = document.getElementById('presensiEnd').value || 'all';
       XLSX.writeFile(wb, `Rekap_Presensi_${s}_${e}.xlsx`);
+    });
+
+    const modalDetailPresensi = document.getElementById('modalDetailPresensi');
+    document.querySelectorAll('.btn-tutup-detail-presensi').forEach(btn => {
+      btn.addEventListener('click', () => {
+        modalDetailPresensi.classList.add('hidden');
+        modalDetailPresensi.style.display = 'none';
+      });
     });
   }
 
