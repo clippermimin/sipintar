@@ -103,9 +103,12 @@
         <p style="color: #666; text-align: center; padding: 32px 0;">Memuat data...</p>
       </div>
 
-      <div style="margin-top: 24px; text-align: center;">
-        <button id="btnExportPresensi" class="btn btn-outline" style="padding: 12px 24px; border-radius: 8px; border: 1px solid #1a73e8; color: #1a73e8; background: white; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
+      <div style="margin-top: 24px; text-align: center; display: flex; gap: 12px; justify-content: center;">
+        <button id="btnExportPresensi" class="btn btn-outline" style="padding: 12px 24px; border-radius: 8px; border: 1px solid #10b981; color: #10b981; background: white; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
           <span class="material-icons-outlined">download</span> Export ke Excel
+        </button>
+        <button id="btnExportPresensiPdf" class="btn btn-outline" style="padding: 12px 24px; border-radius: 8px; border: 1px solid #ef4444; color: #ef4444; background: white; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
+          <span class="material-icons-outlined">picture_as_pdf</span> Export ke PDF
         </button>
       </div>
 
@@ -368,6 +371,49 @@
       const s = document.getElementById('presensiStart').value || 'all';
       const e = document.getElementById('presensiEnd').value || 'all';
       XLSX.writeFile(wb, `Rekap_Presensi_${s}_${e}.xlsx`);
+    });
+
+    document.getElementById('btnExportPresensiPdf')?.addEventListener('click', () => {
+      if (!_allPresensi.length) { window.Components.toast('Tidak ada data untuk diekspor', 'error'); return; }
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      
+      const s = document.getElementById('presensiStart').value || 'Semua Waktu';
+      const e = document.getElementById('presensiEnd').value || 'Semua Waktu';
+      
+      doc.setFontSize(16);
+      doc.text('Laporan Rekap Presensi Guru', 14, 15);
+      doc.setFontSize(10);
+      doc.setTextColor(100);
+      doc.text(`Periode: ${s} s/d ${e}`, 14, 22);
+
+      const headers = [['Nama Guru', 'NIP', 'Tanggal', 'Waktu', 'Status', 'Catatan']];
+      const rows = _allPresensi.map(p => [
+        p.profiles?.nama || '-',
+        p.profiles?.nip || '-',
+        p.tanggal,
+        p.waktu ? p.waktu.substring(0,5) : '-',
+        p.status,
+        p.catatan || '-'
+      ]);
+
+      doc.autoTable({
+        head: headers,
+        body: rows,
+        startY: 28,
+        styles: { fontSize: 8 },
+        headStyles: { fillColor: [41, 128, 185] },
+        columnStyles: {
+          0: { cellWidth: 35 },
+          1: { cellWidth: 25 },
+          2: { cellWidth: 20 },
+          3: { cellWidth: 15 },
+          4: { cellWidth: 25 },
+          5: { cellWidth: 'auto' }
+        }
+      });
+
+      doc.save(`Rekap_Presensi_${s}_${e}.pdf`);
     });
 
     const modalDetailPresensi = document.getElementById('modalDetailPresensi');
