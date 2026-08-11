@@ -9,7 +9,26 @@ window.Components = {
       app.style.opacity = '1';
       app.style.transform = 'translateY(0)';
       window.scrollTo(0, 0);
+      this.initDatePickers();
     }, 150);
+  },
+  
+  initDatePickers() {
+    if (window.flatpickr) {
+      document.querySelectorAll('input[type="date"]').forEach(el => {
+        if (!el._flatpickr) {
+          el.type = 'text'; // Hide native picker
+          flatpickr(el, {
+            locale: 'id',
+            dateFormat: 'Y-m-d',
+            altInput: true,
+            altFormat: 'j F Y',
+            altInputClass: 'form-input',
+            disableMobile: "true"
+          });
+        }
+      });
+    }
   },
   
   // Header component
