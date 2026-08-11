@@ -301,6 +301,79 @@
   }
 
   // ── Bind Events ─────────────────────────────────────────────────────────────
+  function bindStep0() {
+    document.getElementById('btnAmbilFoto')?.addEventListener('click', async () => {
+      const btnAmbil = document.getElementById('btnAmbilFoto');
+      btnAmbil.innerHTML = '<span class="material-icons-outlined" style="animation: spin 1s linear infinite;">refresh</span> Memproses...';
+      btnAmbil.disabled = true;
+
+      const previewUrl = await capturePhoto();
+
+      // Hitung GPS & tampilkan konfirmasi (tunggu jika GPS belum siap)
+      let attempt = 0;
+      while (!gpsCoords && attempt < 20) { // wait up to 4 seconds for GPS
+        await new Promise(r => setTimeout(r, 200));
+        attempt++;
+      }
+
+      // DUMMY: Selalu dalam radius sekolah dengan jarak acak
+      let jarak = Math.floor(Math.random() * 30) + 5;
+      let dalamRadius = true;
+
+      document.getElementById('presensi-content').innerHTML = renderStep1(previewUrl, jarak, dalamRadius);
+
+      // Update jam sekarang
+      const waktuEl = document.getElementById('waktuSekarang');
+      if (waktuEl) {
+        const now = new Date();
+        waktuEl.textContent = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')} WIB`;
+      }
+
+      bindStep1();
+    });
+  }
+
+  function bindStep1() {
+    document.getElementById('btnUlangFoto')?.addEventListener('click', () => {
+      capturedBlob = null;
+      document.getElementById('presensi-content').innerHTML = renderStep0();
+      bindStep0();
+      initCamera();
+    });
+
+    document.getElementById('btnKeIzin')?.addEventListener('click', () => {
+      currentTab = 'Izin';
+      stopStream();
+      render();
+    });
+
+    document.getElementById('btnKirimPresensi')?.addEventListener('click', async () => {
+      const btn = document.getElementById('btnKirimPresensi');
+      btn.innerHTML = '<span class="material-icons-outlined" style="animation: spin 1s linear infinite;">refresh</span> Menyimpan...';
+      btn.disabled = true;
+      try {
+        await window.APP_DATA.submitPresensi({
+          status: 'Hadir',
+          fotoBlob: capturedBlob,
+          latitude: gpsCoords?.lat || -6.200000,
+          longitude: gpsCoords?.lng || 106.816666,
+          catatan: null
+        });
+        window.APP_STATE.presensiDone = true;
+        const now = new Date();
+        const waktu = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+        document.getElementById('presensi-content').innerHTML = renderSuccess(waktu + ' WIB');
+        document.getElementById('btnKembaliDashboard')?.addEventListener('click', () => window.Router.navigate('/guru/dashboard'));
+        setTimeout(() => window.Router.navigate('/guru/dashboard'), 3000);
+      } catch (err) {
+        console.error(err);
+        window.Components.toast('Gagal menyimpan presensi: ' + (err.message || err), 'error');
+        btn.innerHTML = '<span class="material-icons-outlined">check_circle</span> Konfirmasi & Kirim Presensi';
+        btn.disabled = false;
+      }
+    });
+  }
+
   function bindEvents() {
     const tabHadir = document.getElementById('tab-hadir');
     const tabIzin = document.getElementById('tab-izin');
@@ -309,73 +382,7 @@
     tabIzin?.addEventListener('click', () => { currentTab = 'Izin'; stopStream(); render(); });
 
     if (currentTab === 'Hadir') {
-      document.getElementById('btnAmbilFoto')?.addEventListener('click', async () => {
-        const btnAmbil = document.getElementById('btnAmbilFoto');
-        const originalText = btnAmbil.innerHTML;
-        btnAmbil.innerHTML = '<span class="material-icons-outlined" style="animation: spin 1s linear infinite;">refresh</span> Memproses...';
-        btnAmbil.disabled = true;
-
-        const previewUrl = await capturePhoto();
-
-        // Hitung GPS & tampilkan konfirmasi (tunggu jika GPS belum siap)
-        let attempt = 0;
-        while (!gpsCoords && attempt < 20) { // wait up to 4 seconds for GPS
-          await new Promise(r => setTimeout(r, 200));
-          attempt++;
-        }
-
-        // DUMMY: Selalu dalam radius sekolah dengan jarak acak
-        let jarak = Math.floor(Math.random() * 30) + 5;
-        let dalamRadius = true;
-
-        document.getElementById('presensi-content').innerHTML = renderStep1(previewUrl, jarak, dalamRadius);
-
-        // Update jam sekarang
-        const waktuEl = document.getElementById('waktuSekarang');
-        if (waktuEl) {
-          const now = new Date();
-          waktuEl.textContent = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')} WIB`;
-        }
-
-        document.getElementById('btnUlangFoto')?.addEventListener('click', () => {
-          capturedBlob = null;
-          document.getElementById('presensi-content').innerHTML = renderStep0();
-          bindHadirInner();
-          initCamera();
-        });
-
-        document.getElementById('btnKeIzin')?.addEventListener('click', () => {
-          currentTab = 'Izin';
-          stopStream();
-          render();
-        });
-
-        document.getElementById('btnKirimPresensi')?.addEventListener('click', async () => {
-          const btn = document.getElementById('btnKirimPresensi');
-          btn.innerHTML = '<span class="material-icons-outlined" style="animation: spin 1s linear infinite;">refresh</span> Menyimpan...';
-          btn.disabled = true;
-          try {
-            const result = await window.APP_DATA.submitPresensi({
-              status: 'Hadir',
-              fotoBlob: capturedBlob,
-              latitude: gpsCoords?.lat || -6.200000,
-              longitude: gpsCoords?.lng || 106.816666,
-              catatan: null
-            });
-            window.APP_STATE.presensiDone = true;
-            const now = new Date();
-            const waktu = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-            document.getElementById('presensi-content').innerHTML = renderSuccess(waktu + ' WIB');
-            document.getElementById('btnKembaliDashboard')?.addEventListener('click', () => window.Router.navigate('/guru/dashboard'));
-            setTimeout(() => window.Router.navigate('/guru/dashboard'), 3000);
-          } catch (err) {
-            console.error(err);
-            window.Components.toast('Gagal menyimpan presensi: ' + (err.message || err), 'error');
-            btn.innerHTML = '<span class="material-icons-outlined">check_circle</span> Konfirmasi & Kirim Presensi';
-            btn.disabled = false;
-          }
-        });
-      });
+      bindStep0();
     }
 
     if (currentTab === 'Izin') {
@@ -401,17 +408,6 @@
         }
       });
     }
-  }
-
-  function bindHadirInner() {
-    document.getElementById('btnAmbilFoto')?.addEventListener('click', async () => {
-      const previewUrl = await capturePhoto();
-      // DUMMY: Selalu dalam radius
-      let jarak = Math.floor(Math.random() * 30) + 5;
-      let dalamRadius = true;
-      document.getElementById('presensi-content').innerHTML = renderStep1(previewUrl, jarak, dalamRadius);
-      bindEvents();
-    });
   }
 
   window.Router.register('/guru/presensi', () => {
