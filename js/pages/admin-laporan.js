@@ -138,7 +138,15 @@
           <div id="detailContent" style="font-size: 14px; color: #333;">
             <p>Memuat detail...</p>
           </div>
-          <div style="margin-top: 24px; text-align: right;">
+          <div style="margin-top: 24px; display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; gap: 8px;">
+              <button id="btnModalPrintExcel" class="btn btn-outline" style="padding: 10px 16px; border-radius: 8px; border: 1px solid #10b981; color: #10b981; background: white; cursor: pointer; display: flex; align-items: center; gap: 6px; font-weight: 500;">
+                <span class="material-icons-outlined" style="font-size: 18px;">table_view</span> Excel
+              </button>
+              <button id="btnModalPrintPdf" class="btn btn-outline" style="padding: 10px 16px; border-radius: 8px; border: 1px solid #ef4444; color: #ef4444; background: white; cursor: pointer; display: flex; align-items: center; gap: 6px; font-weight: 500;">
+                <span class="material-icons-outlined" style="font-size: 18px;">picture_as_pdf</span> PDF
+              </button>
+            </div>
             <button class="btn-tutup-detail btn btn-primary" style="padding: 10px 20px; border-radius: 8px; border: none; background: #2563eb; color: white; cursor: pointer;">Tutup</button>
           </div>
         </div>
@@ -251,6 +259,13 @@
       <h4 style="margin: 20px 0 8px 0; border-bottom: 1px solid #eee; padding-bottom: 8px;">Daftar Siswa Tidak Hadir</h4>
       ${absensiHtml}
     `;
+
+    document.getElementById('btnModalPrintExcel').onclick = async () => {
+      await exportSingleLaporan(laporan, 'excel');
+    };
+    document.getElementById('btnModalPrintPdf').onclick = async () => {
+      await exportSingleLaporan(laporan, 'pdf');
+    };
   }
 
   async function exportSingleLaporan(laporan, format) {
@@ -355,8 +370,6 @@
             <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
               ${badgeHtml}
               <div style="display:flex;gap:8px;">
-                <button class="btn btn-outline print-excel-btn" data-id="${l.id}" title="Unduh Excel" style="padding:4px 8px;border-radius:4px;border:1px solid #10b981;color:#10b981;background:white;cursor:pointer;display:flex;align-items:center;justify-content:center;"><span class="material-icons-outlined" style="font-size:16px;pointer-events:none;">table_view</span></button>
-                <button class="btn btn-outline print-pdf-btn" data-id="${l.id}" title="Unduh PDF" style="padding:4px 8px;border-radius:4px;border:1px solid #ef4444;color:#ef4444;background:white;cursor:pointer;display:flex;align-items:center;justify-content:center;"><span class="material-icons-outlined" style="font-size:16px;pointer-events:none;">picture_as_pdf</span></button>
                 <button class="btn btn-outline detail-laporan-btn" data-id="${l.id}" style="padding:4px 8px;font-size:12px;border-radius:4px;border:1px solid #1a73e8;color:#1a73e8;background:white;cursor:pointer;">Detail</button>
                 <button class="btn btn-outline del-laporan-btn" data-id="${l.id}" style="padding:4px 8px;font-size:12px;border-radius:4px;border:1px solid #ea4335;color:#ea4335;background:white;cursor:pointer;">Hapus</button>
               </div>
@@ -370,22 +383,6 @@
         const id = e.target.dataset.id;
         const laporan = window._laporanAll.find(l => l.id === id);
         if (laporan) showDetailModal(laporan);
-      });
-    });
-
-    document.querySelectorAll('.print-excel-btn').forEach(btn => {
-      btn.addEventListener('click', async (e) => {
-        const id = e.target.dataset.id;
-        const laporan = window._laporanAll.find(l => l.id === id);
-        if (laporan) await exportSingleLaporan(laporan, 'excel');
-      });
-    });
-
-    document.querySelectorAll('.print-pdf-btn').forEach(btn => {
-      btn.addEventListener('click', async (e) => {
-        const id = e.target.dataset.id;
-        const laporan = window._laporanAll.find(l => l.id === id);
-        if (laporan) await exportSingleLaporan(laporan, 'pdf');
       });
     });
 
