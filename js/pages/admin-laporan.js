@@ -253,6 +253,85 @@
     `;
   }
 
+  async function exportSingleLaporan(laporan, format) {
+    window.Components.showLoading('Menyiapkan file...');
+    try {
+      const { data: absensi, error } = await window.supabase
+        .from('absensi_piket')
+        .select('*, siswa(nama, kelas(nama))')
+        .eq('laporan_id', laporan.id);
+
+      if (error) throw new Error('Gagal memuat data absensi');
+
+      const headers = ['Tanggal', 'Sesi', 'Guru/Petugas', 'Nama Siswa', 'Kelas', 'Status Kehadiran', 'Catatan Piket'];
+      const rows = [];
+      
+      let petugas = laporan.profiles?.nama || '-';
+      let catatanStr = laporan.catatan || '-';
+      
+      const petugasMatch = catatanStr.match(/^\[(.*?)\]\s*/);
+      if (petugasMatch) {
+        petugas = petugasMatch[1].replace(/Petugas \d+:\s/g, '');
+        catatanStr = catatanStr.substring(petugasMatch[0].length) || '-';
+      }
+      
+      if (!absensi || absensi.length === 0) {
+        rows.push([laporan.tanggal, laporan.sesi, petugas, '-', '-', '-', catatanStr]);
+      } else {
+        absensi.forEach(a => {
+          const siswaNama = a.siswa?.nama || '-';
+          const kelasNama = a.siswa?.kelas?.nama || '-';
+          rows.push([laporan.tanggal, laporan.sesi, petugas, siswaNama, kelasNama, a.status, catatanStr]);
+        });
+      }
+
+      const filename = `Laporan_Piket_${laporan.tanggal}_Sesi_${laporan.sesi}`;
+
+      if (format === 'excel') {
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+        
+        ws['!cols'] = [
+          {wch: 12}, // Tanggal
+          {wch: 8},  // Sesi
+          {wch: 25}, // Guru
+          {wch: 25}, // Nama Siswa
+          {wch: 12}, // Kelas
+          {wch: 15}, // Status
+          {wch: 50}  // Catatan
+        ];
+        
+        XLSX.utils.book_append_sheet(wb, ws, "Detail Piket");
+        XLSX.writeFile(wb, `${filename}.xlsx`);
+      } else {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({ orientation: 'landscape' });
+        
+        doc.setFontSize(16);
+        doc.text('Detail Laporan Piket', 14, 15);
+        doc.setFontSize(11);
+        doc.text(`Tanggal: ${laporan.tanggal} | Sesi: ${laporan.sesi} | Guru: ${petugas}`, 14, 22);
+
+        doc.autoTable({
+          startY: 28,
+          head: [headers],
+          body: rows,
+          theme: 'grid',
+          headStyles: { fillColor: [52, 199, 89] },
+          styles: { fontSize: 9 }
+        });
+
+        doc.save(`${filename}.pdf`);
+      }
+      
+      window.Components.hideLoading();
+      window.Components.toast('Berhasil mengunduh laporan!', 'success');
+    } catch (err) {
+      window.Components.hideLoading();
+      window.Components.toast(err.message, 'error');
+    }
+  }
+
   function renderList(laporans) {
     const el = document.getElementById('laporanList');
     if (!el) return;
@@ -276,6 +355,8 @@
             <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
               ${badgeHtml}
               <div style="display:flex;gap:8px;">
+                <button class="btn btn-outline print-excel-btn" data-id="${l.id}" title="Unduh Excel" style="padding:4px 8px;border-radius:4px;border:1px solid #10b981;color:#10b981;background:white;cursor:pointer;display:flex;align-items:center;justify-content:center;"><span class="material-icons-outlined" style="font-size:16px;pointer-events:none;">table_view</span></button>
+                <button class="btn btn-outline print-pdf-btn" data-id="${l.id}" title="Unduh PDF" style="padding:4px 8px;border-radius:4px;border:1px solid #ef4444;color:#ef4444;background:white;cursor:pointer;display:flex;align-items:center;justify-content:center;"><span class="material-icons-outlined" style="font-size:16px;pointer-events:none;">picture_as_pdf</span></button>
                 <button class="btn btn-outline detail-laporan-btn" data-id="${l.id}" style="padding:4px 8px;font-size:12px;border-radius:4px;border:1px solid #1a73e8;color:#1a73e8;background:white;cursor:pointer;">Detail</button>
                 <button class="btn btn-outline del-laporan-btn" data-id="${l.id}" style="padding:4px 8px;font-size:12px;border-radius:4px;border:1px solid #ea4335;color:#ea4335;background:white;cursor:pointer;">Hapus</button>
               </div>
@@ -289,6 +370,22 @@
         const id = e.target.dataset.id;
         const laporan = window._laporanAll.find(l => l.id === id);
         if (laporan) showDetailModal(laporan);
+      });
+    });
+
+    document.querySelectorAll('.print-excel-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const id = e.target.dataset.id;
+        const laporan = window._laporanAll.find(l => l.id === id);
+        if (laporan) await exportSingleLaporan(laporan, 'excel');
+      });
+    });
+
+    document.querySelectorAll('.print-pdf-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const id = e.target.dataset.id;
+        const laporan = window._laporanAll.find(l => l.id === id);
+        if (laporan) await exportSingleLaporan(laporan, 'pdf');
       });
     });
 
